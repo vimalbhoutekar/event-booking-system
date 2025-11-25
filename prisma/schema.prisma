@@ -58,10 +58,14 @@ model User {
   isVerified   Boolean       @default(false) @map("is_verified")
   country      String?
   status       UserStatus    @default(Active)
+  role         UserRole      @default(USER)
   createdAt    DateTime      @default(now()) @map("created_at")
   updatedAt    DateTime      @updatedAt @map("updated_at")
   meta         UserMeta?
   settings     UserSetting[]
+
+  eventsCreated Event[]   @relation("EventOrganizer")
+  bookings      Booking[] @relation("UserBookings")
 
   @@map("user")
 }
@@ -74,6 +78,13 @@ model UserMeta {
   userId       Int     @unique() @map("user_id")
 
   @@map("user_meta")
+}
+
+enum UserRole {
+  USER      @map("user")
+  ORGANIZER @map("organizer")
+
+  @@map("user_role")
 }
 
 enum OtpTransport {
@@ -162,3 +173,70 @@ model SystemSetting {
   @@id([settingId])
   @@map("system_setting")
 }
+
+// EVENT BOOKING SYSTEM MODEL 
+
+enum EventStatus {
+  DRAFT      @map("draft")
+  PUBLISHED  @map("published")
+  CANCELLED  @map("cancelled")
+  COMPLETED  @map("completed")
+
+  @@map("event_status")
+}
+
+enum BookingStatus {
+  CONFIRMED  @map("confirmed")
+  CANCELLED  @map("cancelled")
+
+  @@map("booking_status")
+}
+
+model Event {
+  id              Int          @id @default(autoincrement())
+  title           String
+  description     String?      @db.Text
+  totalSeats      Int          @map("total_seats")
+  availableSeats  Int          @map("available_seats")
+  status          EventStatus  @default(DRAFT)
+  
+  version         Int          @default(0)
+  
+  eventDate       DateTime?    @map("event_date")
+  
+  organizerId     Int          @map("organizer_id")
+  organizer       User         @relation("EventOrganizer", fields: [organizerId], references: [id], onDelete: Cascade)
+  
+  bookings        Booking[]    @relation("EventBookings")
+  
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  @@index([organizerId])
+  @@index([status])
+  @@index([eventDate])
+  @@map("event")
+}
+
+model Booking {
+  id              Int            @id @default(autoincrement())
+  seatCount       Int            @map("seat_count")
+  status          BookingStatus  @default(CONFIRMED)
+  
+  userId          Int            @map("user_id")
+  user            User           @relation("UserBookings", fields: [userId], references: [id], onDelete: Cascade)
+  
+  eventId         Int            @map("event_id")
+  event           Event          @relation("EventBookings", fields: [eventId], references: [id], onDelete: Cascade)
+  
+  bookingReference String        @unique @default(uuid()) @map("booking_reference")
+  
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([eventId])
+  @@index([bookingReference])
+  @@map("booking")
+}
+
