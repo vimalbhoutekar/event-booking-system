@@ -8,6 +8,7 @@ import { jwtConfigFactory } from '@Config';
 import { AuthenticatedUser, JwtPayload, UserType } from '../types';
 import { UtilsService } from '../providers';
 import { JWT_AUTH } from '../common.constants';
+import { UserRole } from '@prisma/client';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, JWT_AUTH) {
@@ -64,6 +65,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, JWT_AUTH) {
     return {
       id: payload.sub,
       type: payload.type,
+      role: payload.role || UserRole.USER,
     };
   }
 }

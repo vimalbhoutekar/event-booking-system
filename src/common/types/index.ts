@@ -1,5 +1,6 @@
 import { Request } from 'express';
 import { IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { UserRole } from '@prisma/client';
 
 export enum NodeType {
   Master = 'master',
@@ -82,6 +83,7 @@ export enum UserType {
 export interface JwtPayload {
   readonly sub: number;
   readonly type: UserType;
+  readonly role?: UserRole;
 }
 
 export interface ValidatedUser {
@@ -92,6 +94,7 @@ export interface ValidatedUser {
 export interface AuthenticatedUser {
   readonly id: number;
   readonly type: UserType;
+  readonly role?: UserRole;
 }
 
 export interface Context {

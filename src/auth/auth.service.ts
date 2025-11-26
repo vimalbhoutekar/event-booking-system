@@ -70,10 +70,12 @@ export class AuthService {
   }
 
   async login(userId: number, type: UserType): Promise<ValidAuthResponse> {
+    const user = await this.usersService.getById(userId);
     return {
       accessToken: this.generateJwt({
         sub: userId,
         type,
+        role: user.role,
       }),
       type,
     };
