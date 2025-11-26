@@ -76,6 +76,7 @@ export class UsersController extends BaseController {
       dialCode: data.dialCode,
       mobile: data.mobile,
       country: data.country,
+      role: data.role,
     });
     return { status: 'success' };
   }

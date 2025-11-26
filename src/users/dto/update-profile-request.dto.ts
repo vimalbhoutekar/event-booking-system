@@ -1,6 +1,8 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { UserRole } from '@prisma/client';
 import {
   IsEmail,
+  IsEnum,
   IsNotEmpty,
   IsOptional,
   IsPhoneNumber,
@@ -50,4 +52,15 @@ export class UpdateProfileDetailsRequestDto {
   @IsString()
   @IsNotEmpty()
   country?: string;
+
+  @ApiPropertyOptional({
+    description: 'Update user role - USER or ORGANIZER',
+    enum: UserRole,
+    example: UserRole.ORGANIZER,
+  })
+  @IsOptional()
+  @IsEnum(UserRole, {
+    message: 'Role must be either USER or ORGANIZER',
+  })
+  role?: UserRole;
 }

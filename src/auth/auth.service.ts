@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
-import { OtpTransport, User } from '@prisma/client';
+import { OtpTransport, User, UserRole } from '@prisma/client';
 import { JwtPayload, UserType } from '@Common';
 import { SendCodeRequestType } from './dto';
 import { UsersService } from '../users';
@@ -91,6 +91,7 @@ export class AuthService {
     country: string;
     emailVerificationCode: string;
     mobileVerificationCode?: string;
+    role?: UserRole;
   }): Promise<InvalidVerifyCodeResponse | ValidAuthResponse> {
     const [verifyEmailOtpResponse, verifyMobileOtpResponse] = await Promise.all(
       [
@@ -125,11 +126,13 @@ export class AuthService {
       dialCode: data.dialCode,
       mobile: data.mobile,
       country: data.country,
+      role: data.role,
     });
     return {
       accessToken: this.generateJwt({
         sub: user.id,
         type: UserType.User,
+        role: user.role,
       }),
       type: UserType.User,
     };

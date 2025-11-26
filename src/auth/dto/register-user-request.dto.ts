@@ -6,34 +6,54 @@ import {
   IsPhoneNumber,
   IsString,
   IsStrongPassword,
+  IsEnum,
 } from 'class-validator';
+import { UserRole } from '@prisma/client';
 
 export class RegisterUserRequestDto {
-  @ApiProperty()
+  @ApiProperty({
+    description: 'User first name',
+    example: 'John',
+  })
   @IsString()
   @IsNotEmpty()
   firstname: string;
 
-  @ApiProperty()
+  @ApiProperty({
+    description: 'User last name',
+    example: 'Doe',
+  })
   @IsString()
   @IsNotEmpty()
   lastname: string;
 
-  @ApiProperty()
+  @ApiProperty({
+    description: 'User email address',
+    example: 'john@example.com',
+  })
   @IsEmail()
   email: string;
 
-  @ApiProperty()
+  @ApiProperty({
+    description: 'Strong password',
+    example: 'SecurePass@123',
+  })
   @IsStrongPassword()
   password: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({
+    description: 'Country dial code',
+    example: '+91',
+  })
   @IsOptional()
   @IsString()
   @IsNotEmpty()
   dialCode?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({
+    description: 'Mobile number',
+    example: '9876543210',
+  })
   @IsOptional()
   @IsPhoneNumber(undefined, {
     message:
@@ -41,17 +61,38 @@ export class RegisterUserRequestDto {
   })
   mobile?: string;
 
-  @ApiProperty()
+  @ApiProperty({
+    description: 'User country',
+    example: 'India',
+  })
   @IsString()
   @IsNotEmpty()
   country: string;
 
-  @ApiProperty()
+  @ApiProperty({
+    description: 'Email verification code (OTP)',
+    example: '123456',
+  })
   @IsString()
   emailVerificationCode: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({
+    description: 'Mobile verification code (OTP)',
+    example: '654321',
+  })
   @IsOptional()
   @IsString()
   mobileVerificationCode?: string;
+
+  @ApiPropertyOptional({
+    description: 'User role - USER (default) or ORGANIZER (for event creators)',
+    enum: UserRole,
+    example: UserRole.USER,
+    default: UserRole.USER,
+  })
+  @IsOptional()
+  @IsEnum(UserRole, {
+    message: 'Role must be either USER or ORGANIZER',
+  })
+  role?: UserRole;
 }

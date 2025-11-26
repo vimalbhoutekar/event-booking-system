@@ -8,6 +8,7 @@ import {
   Prisma,
   User,
   UserMeta,
+  UserRole,
   UserStatus,
 } from '@prisma/client';
 import {
@@ -186,6 +187,7 @@ export class UsersService {
     country?: string;
     googleId?: string;
     profileImage?: string;
+    role?: UserRole;
   }): Promise<User> {
     if (await this.isEmailExist(data.email)) {
       throw new Error('Email already exist');
@@ -211,6 +213,7 @@ export class UsersService {
         mobile: data.mobile,
         profileImage: data.profileImage,
         country: data.country,
+        role: data.role || UserRole.USER,
         meta: {
           create: {
             passwordHash,
@@ -284,6 +287,7 @@ export class UsersService {
       dialCode?: string;
       mobile?: string;
       country?: string;
+       role?: UserRole;
     },
     options?: { tx?: Prisma.TransactionClient },
   ): Promise<User> {
@@ -314,6 +318,7 @@ export class UsersService {
         dialCode: data.dialCode,
         mobile: data.mobile,
         country: data.country,
+          role: data.role, 
       },
       where: {
         id: data.userId,
