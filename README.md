@@ -73,13 +73,35 @@ npm run build
 npm run start:prod
 ```
 
-Server will be running at: `http://localhost:3000`
+Server will be running at: `http://localhost:9001`
 
 ## 📚 API Documentation
 
 Once the server is running, access Swagger documentation at:
 ```
 http://localhost:3000/api-docs
+
+```
+## 📬 API Testing
+
+### Postman Collection
+
+A complete Postman collection is available in `docs/postman/`.
+
+**Import Steps:**
+1. Open Postman
+2. Click "Import"
+3. Select `docs/postman/Event_Booking_System.postman_collection.json`
+4. Update collection variables:
+   - `BASE_URL` = `http://localhost:9001`
+5. Run "Auth - Login as Organizer" to get token
+6. Start testing!
+
+### Swagger Documentation
+
+Interactive API documentation available at:
+```
+http://localhost:9001/api-docs
 ```
 
 ## 🔐 Authentication
