@@ -87,8 +87,8 @@ export class EventsController extends BaseController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard, UserRoleGuard)
   @UserRoles(UserRole.ORGANIZER)
+  @UseGuards(JwtAuthGuard, UserRoleGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new event (Organizer only)' })
   @ApiResponse({
@@ -125,8 +125,8 @@ export class EventsController extends BaseController {
 
   @Get('organizer/my-events')
   @CacheTTL(1)
-  @UseGuards(JwtAuthGuard, UserRoleGuard)
   @UserRoles(UserRole.ORGANIZER)
+  @UseGuards(JwtAuthGuard, UserRoleGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get my events (Organizer only)' })
   @ApiResponse({ status: 200, description: 'Events retrieved successfully' })
@@ -144,8 +144,8 @@ export class EventsController extends BaseController {
   }
 
   @Put(':id')
-  @UseGuards(JwtAuthGuard, UserRoleGuard)
   @UserRoles(UserRole.ORGANIZER)
+  @UseGuards(JwtAuthGuard, UserRoleGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update event (Owner organizer only)' })
   @ApiResponse({ status: 200, description: 'Event updated successfully' })
@@ -163,8 +163,8 @@ export class EventsController extends BaseController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, UserRoleGuard)
   @UserRoles(UserRole.ORGANIZER)
+  @UseGuards(JwtAuthGuard, UserRoleGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete event (Owner organizer only)' })
   @ApiResponse({

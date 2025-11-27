@@ -32,8 +32,8 @@ export class BookingsController extends BaseController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard, UserRoleGuard)
   @UserRoles(UserRole.USER, UserRole.ORGANIZER)
+  @UseGuards(JwtAuthGuard, UserRoleGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Book seats for an event',
@@ -90,8 +90,8 @@ export class BookingsController extends BaseController {
 
   @Get()
   @CacheTTL(1)
-  @UseGuards(JwtAuthGuard, UserRoleGuard)
   @UserRoles(UserRole.USER, UserRole.ORGANIZER)
+  @UseGuards(JwtAuthGuard, UserRoleGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Get my bookings',
@@ -139,8 +139,8 @@ export class BookingsController extends BaseController {
 
   @Get(':bookingReference')
   @CacheTTL(1)
-  @UseGuards(JwtAuthGuard, UserRoleGuard)
   @UserRoles(UserRole.USER, UserRole.ORGANIZER)
+  @UseGuards(JwtAuthGuard, UserRoleGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Get booking by reference',
@@ -167,8 +167,8 @@ export class BookingsController extends BaseController {
   }
 
   @Delete(':bookingReference')
-  @UseGuards(JwtAuthGuard, UserRoleGuard)
   @UserRoles(UserRole.USER, UserRole.ORGANIZER)
+  @UseGuards(JwtAuthGuard, UserRoleGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Cancel a booking',
