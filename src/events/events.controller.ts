@@ -28,6 +28,7 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { UserRoleGuard, UserRoles } from '../common/guards/user-role.guard';
 import { UserRole } from '@prisma/client';
 import { AuthenticatedRequest, BaseController } from '@Common';
+import { CacheTTL } from '@nestjs/cache-manager';
 
 @ApiTags('Events')
 @Controller('events')
@@ -37,6 +38,7 @@ export class EventsController extends BaseController {
   }
 
   @Get()
+  @CacheTTL(1)
   @ApiOperation({ summary: 'Get all events' })
   @ApiResponse({
     status: 200,
@@ -76,6 +78,7 @@ export class EventsController extends BaseController {
   }
 
   @Get(':id')
+  @CacheTTL(1)
   @ApiOperation({ summary: 'Get event by ID' })
   @ApiResponse({ status: 200, description: 'Event retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Event not found' })
@@ -121,6 +124,7 @@ export class EventsController extends BaseController {
   }
 
   @Get('organizer/my-events')
+  @CacheTTL(1)
   @UseGuards(JwtAuthGuard, UserRoleGuard)
   @UserRoles(UserRole.ORGANIZER)
   @ApiBearerAuth()

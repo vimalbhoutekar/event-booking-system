@@ -1,7 +1,3 @@
-// ============================================
-// src/bookings/dto/create-booking-request.dto.ts
-// ============================================
-
 import { ApiProperty } from '@nestjs/swagger';
 import { IsInt, Min } from 'class-validator';
 import { Type } from 'class-transformer';

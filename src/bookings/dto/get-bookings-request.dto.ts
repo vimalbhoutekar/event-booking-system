@@ -1,7 +1,3 @@
-// ============================================
-// src/bookings/dto/get-bookings-request.dto.ts
-// ============================================
-
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsEnum, IsInt, Min } from 'class-validator';
 import { Type } from 'class-transformer';

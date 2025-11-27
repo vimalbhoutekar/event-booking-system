@@ -1,7 +1,3 @@
-// ============================================
-// src/bookings/bookings.controller.ts
-// ============================================
-
 import {
   Controller,
   Get,
@@ -26,6 +22,7 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { UserRoleGuard, UserRoles } from '../common/guards/user-role.guard';
 import { UserRole } from '@prisma/client';
 import { AuthenticatedRequest, BaseController } from '@Common';
+import { CacheTTL } from '@nestjs/cache-manager';
 
 @ApiTags('Bookings')
 @Controller('bookings')
@@ -34,10 +31,6 @@ export class BookingsController extends BaseController {
     super();
   }
 
-  /**
-   * POST /bookings - Create a new booking
-   * Protected: USER and ORGANIZER roles can book
-   */
   @Post()
   @UseGuards(JwtAuthGuard, UserRoleGuard)
   @UserRoles(UserRole.USER, UserRole.ORGANIZER)
@@ -95,11 +88,8 @@ export class BookingsController extends BaseController {
     return this.bookingsService.createBooking(ctx.user.id, dto);
   }
 
-  /**
-   * GET /bookings - Get user's bookings
-   * Protected: Users can view their own bookings
-   */
   @Get()
+  @CacheTTL(1)
   @UseGuards(JwtAuthGuard, UserRoleGuard)
   @UserRoles(UserRole.USER, UserRole.ORGANIZER)
   @ApiBearerAuth()
@@ -147,11 +137,8 @@ export class BookingsController extends BaseController {
     return this.bookingsService.getUserBookings(ctx.user.id, query);
   }
 
-  /**
-   * GET /bookings/:bookingReference - Get single booking by reference
-   * Protected: Users can view their own bookings, organizers can view bookings for their events
-   */
   @Get(':bookingReference')
+  @CacheTTL(1)
   @UseGuards(JwtAuthGuard, UserRoleGuard)
   @UserRoles(UserRole.USER, UserRole.ORGANIZER)
   @ApiBearerAuth()
@@ -179,10 +166,6 @@ export class BookingsController extends BaseController {
     );
   }
 
-  /**
-   * DELETE /bookings/:bookingReference - Cancel a booking
-   * Protected: Users can cancel their own bookings only
-   */
   @Delete(':bookingReference')
   @UseGuards(JwtAuthGuard, UserRoleGuard)
   @UserRoles(UserRole.USER, UserRole.ORGANIZER)
@@ -219,11 +202,17 @@ export class BookingsController extends BaseController {
       },
     },
   })
-  @ApiResponse({ status: 400, description: 'Bad Request - Already cancelled or past event' })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Already cancelled or past event',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - Not your booking' })
   @ApiResponse({ status: 404, description: 'Booking not found' })
-  @ApiResponse({ status: 409, description: 'Conflict - Cancellation conflict, retry' })
+  @ApiResponse({
+    status: 409,
+    description: 'Conflict - Cancellation conflict, retry',
+  })
   async cancelBooking(
     @Param('bookingReference') bookingReference: string,
     @Request() req: AuthenticatedRequest,
