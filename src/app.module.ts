@@ -11,6 +11,7 @@ import { PrismaModule } from './prisma';
 import { AuthModule } from './auth';
 import { RedisModule } from './redis';
 import { EventsModule } from './events/events.module';
+import { BookingsModule } from './bookings/bookings.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { EventsModule } from './events/events.module';
     RedisModule,
     AuthModule,
     EventsModule,
+    BookingsModule,
   ],
   controllers: [AppController],
   providers: [

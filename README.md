@@ -1,150 +1,250 @@
-<!-- <p align="center">
-  <a href="#" target="_blank"><img src="#" width="200" alt="logo" /></a>
-</p> -->
+# Event Booking System with Concurrency Handling
 
-<p align="center">
-  <a href="#" target="_blank">NestJS App</a> built using Nest framework with Typescript & Postgres database.
-</p>
+A production-ready event booking system built with NestJS, featuring optimistic locking for handling concurrent bookings and preventing race conditions.
 
-## Description
+## 🚀 Features
 
-To be specified.
+- **Event Management** - Organizers can create, update, and delete events
+- **Seat Booking** - Users can book available seats for events
+- **Optimistic Locking** - Prevents double booking under high concurrency
+- **Automatic Retry Logic** - Handles concurrent booking conflicts gracefully
+- **Booking Cancellation** - Users can cancel bookings and release seats
+- **Role-Based Access Control** - USER and ORGANIZER roles with proper authorization
+- **JWT Authentication** - Secure token-based authentication
+- **Swagger Documentation** - Interactive API documentation
 
-## Installation
+## 🛠️ Tech Stack
 
-_Note: Skip this section for docker based production deployment_
+- **Framework:** NestJS (TypeScript)
+- **Database:** PostgreSQL
+- **ORM:** Prisma
+- **Authentication:** JWT (JSON Web Tokens)
+- **Documentation:** Swagger/OpenAPI
+- **Validation:** class-validator, class-transformer
 
+## 📋 Prerequisites
+
+- Node.js (v18 or higher)
+- PostgreSQL (v14 or higher)
+- npm or yarn
+
+## 🔧 Installation
+
+1. **Clone the repository:**
 ```bash
-# install dependencies
-$ npm install
+git clone <your-repo-url>
+cd event-booking-system
 ```
 
-## Setup
-
-Copy the contents of example.env to create .env in the root and update env variables to set server configuration to run.
-
-First you need to run and initialize databases.
-
-> For non docker environment
-
-`DATABASE_URL`, `REDIS_URI` in .env will be use to connect with databases, Please make sure you have correct connection uri here.
-
+2. **Install dependencies:**
 ```bash
-# development
-$ npm run db:init
-
-# production
-$ npm run db:migrate:deploy
-$ npm run db:seed
+npm install
 ```
 
-> For docker environment
+3. **Setup environment variables:**
+Create a `.env` file in the root directory:
+```env
+DATABASE_URL="postgresql://user:password@localhost:5432/event_booking_db"
+JWT_SECRET="your-secret-key-here"
+PORT=3000
+```
 
-_Note: If you already have running required database containers then you can follow same setup as mentioned above for non docker environment._
-
-`POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_PORT`, `REDIS_PORT`, `REDIS_PASSWORD` will be use to create database containers with authentication credential from .env, So make sure `DATABASE_URL` and `REDIS_URI` have exact same user, password and port for connection.
-
-To run production database containers you need to set `POSTGRES_DATA_VOLUME` and `REDIS_DATA_VOLUME` value to be set in .env file to mount the volume into host machine.
-
+4. **Run database migrations:**
 ```bash
-# development
-$ npm run dev:db
-$ npm run db:init
-
-# production
-$ npm run prod:db
-$ npm run db:migrate:deploy
-$ npm run db:seed
+npx prisma migrate dev
+npx prisma generate
 ```
 
-For convenience to switch between docker environment to local environment & testing, Please create host entry in your machine with following:-
-
-```
-127.0.0.1 postgres
-127.0.0.1 redis
-```
-
-## Run the server in docker container
-
+5. **Seed the database (optional):**
 ```bash
-# development
-$ npm run dev
-$ npm run dev:stop # To shut down containers
-
-# production
-$ npm run prod
-$ npm run prod:stop # To shut down containers
+npm run seed
 ```
 
-## Run the server in local machine
+## 🚀 Running the Application
 
+**Development mode:**
 ```bash
-# development
-$ npm run start:dev
-
-# production
-$ npm run start:prod
+npm run start:dev
 ```
 
-## Test
-
+**Production mode:**
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+npm run build
+npm run start:prod
 ```
 
-## Migrate/Sync Database Schema
+Server will be running at: `http://localhost:3000`
 
+## 📚 API Documentation
+
+Once the server is running, access Swagger documentation at:
+```
+http://localhost:3000/api-docs
+```
+
+## 🔐 Authentication
+
+### User Roles
+
+- **USER** - Can book tickets, view bookings, cancel bookings
+- **ORGANIZER** - Can create/manage events + all USER permissions
+
+### Getting Started
+
+1. **Register a user:**
 ```bash
-# initialize database - push schema, add constraints & seed database
-$ npm run db:init
-
-# preview schema
-$ npm run db:studio
-
-# seed database
-$ npm run db:seed
-
-# seed specific seed file into the database
-$ npm run db:seed:only <name> # i.e. `npm run db:seed:only admin` to run prisma/seeds/admin.seed.ts
-
-# add constraints in schema (Note: Not required, If not using `db:schema:push` on staging or production env)
-$ npm run db:schema:constraints
-
-# add constraints for the specific table
-$ npm run db:schema:constraints:only <table name> # i.e. `npm run db:schema:constraints:only user` to add constraints into the user table
-
-# generate client with schema
-$ npm run db:client:generate
-
-# push schema changes to the database without migration
-$ npm run db:schema:push
-
-# generate migration for new changes
-$ npm run db:migration:create
-
-# generate migration for new changes & deploy
-$ npm run db:migrate:dev
-
-# reset database
-$ npm run db:migrate:reset
-
-# deploy all migrations
-$ npm run db:migrate:deploy
+POST /auth/register
 ```
 
-## API Documentation
-
+2. **Login:**
 ```bash
-# development
-http://localhost:{PORT}/api-spec
-
-# production
-{API_URL}/api-spec
+POST /auth/login
 ```
+
+3. **Use the JWT token** in Authorization header:
+```
+Authorization: Bearer <your-jwt-token>
+```
+
+## 🎫 Key Endpoints
+
+### Events
+- `GET /events` - List all events (public)
+- `GET /events/:id` - Get single event (public)
+- `POST /events` - Create event (ORGANIZER only)
+- `PUT /events/:id` - Update event (Owner only)
+- `DELETE /events/:id` - Delete event (Owner only)
+- `GET /events/organizer/my-events` - Get my events (ORGANIZER only)
+
+### Bookings
+- `POST /bookings` - Book seats (USER/ORGANIZER)
+- `GET /bookings` - Get my bookings (USER/ORGANIZER)
+- `GET /bookings/:reference` - Get booking by reference (USER/ORGANIZER)
+- `DELETE /bookings/:reference` - Cancel booking (Owner only)
+
+## 🔥 Concurrency Handling
+
+### How Optimistic Locking Works
+
+1. **Version Field:** Each event has a `version` field that increments on every update
+2. **Atomic Updates:** When booking, we check if the version matches before updating
+3. **Retry Logic:** If version mismatch occurs (someone else updated), automatically retry up to 3 times
+4. **Transaction Safety:** All operations wrapped in database transactions
+
+### Example Flow
+
+```
+User A reads event (version: 5, availableSeats: 10)
+User B reads event (version: 5, availableSeats: 10)
+
+User A books 5 seats:
+  - Check: version still 5? ✅ Yes
+  - Update: availableSeats = 5, version = 6 ✅
+
+User B books 5 seats:
+  - Check: version still 5? ❌ No (now it's 6)
+  - Retry: Read fresh data (version: 6, availableSeats: 5)
+  - Update: availableSeats = 0, version = 7 ✅
+```
+
+## 🧪 Testing
+
+### Run Tests
+```bash
+# Unit tests
+npm run test
+
+# E2E tests
+npm run test:e2e
+
+# Test coverage
+npm run test:cov
+```
+
+### Manual Testing
+
+Use the provided Postman collection or test via Swagger UI.
+
+**Concurrent Booking Test:**
+Create a simple script to simulate multiple users booking simultaneously and verify only valid bookings succeed.
+
+## 📊 Database Schema
+
+### Key Models
+
+**User**
+- `id`, `email`, `password`
+- `role` (USER | ORGANIZER)
+
+**Event**
+- `id`, `title`, `description`
+- `totalSeats`, `availableSeats`
+- `status` (DRAFT | PUBLISHED | CANCELLED | COMPLETED)
+- `version` (for optimistic locking)
+- `organizerId` (foreign key to User)
+
+**Booking**
+- `id`, `userId`, `eventId`
+- `seatCount`, `status`
+- `bookingReference` (UUID)
+
+## 🔒 Security Features
+
+- JWT-based authentication
+- Role-based authorization guards
+- Input validation on all endpoints
+- SQL injection prevention (Prisma ORM)
+- Rate limiting ready (can be added)
+
+## 🚧 Future Enhancements
+
+- [ ] Seat categories (VIP, General)
+- [ ] Real-time seat availability updates (WebSocket)
+- [ ] Email notifications for bookings
+- [ ] Payment integration
+- [ ] Booking history and analytics
+- [ ] Event search and filters
+- [ ] Rate limiting on booking APIs
+
+## 📝 Project Structure
+
+```
+src/
+├── auth/           # Authentication logic
+├── users/          # User management
+├── events/         # Event CRUD operations
+├── bookings/       # Booking logic with optimistic locking
+├── common/         # Shared guards, decorators, types
+├── prisma/         # Database service
+└── main.ts         # Application entry point
+```
+
+## 🤝 Contributing
+
+Contributions are welcome! Please follow these steps:
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+## 👤 Author
+
+**Vimal Bhoutekar**
+- GitHub: [@vimalbhoutekar]
+- Email: vimalbhoutekar@gmail.com
+
+## 🙏 Acknowledgments
+
+- NestJS documentation
+- Prisma documentation
+- Optimistic locking pattern references
+
+---
+
+**Built with ❤️ using NestJS**
