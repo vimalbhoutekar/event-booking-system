@@ -1,272 +1,487 @@
-# Event Booking System with Concurrency Handling
+# 🎫 Event Booking System with Concurrency Handling
 
-A production-ready event booking system built with NestJS, featuring optimistic locking for handling concurrent bookings and preventing race conditions.
+A production-ready event booking system built with NestJS, featuring **optimistic locking** to handle concurrent bookings and prevent race conditions under high traffic.
 
-## 🚀 Features
+[![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=flat&logo=nestjs&logoColor=white)](https://nestjs.com/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=flat&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=flat&logo=prisma&logoColor=white)](https://www.prisma.io/)
 
-- **Event Management** - Organizers can create, update, and delete events
-- **Seat Booking** - Users can book available seats for events
-- **Optimistic Locking** - Prevents double booking under high concurrency
-- **Automatic Retry Logic** - Handles concurrent booking conflicts gracefully
-- **Booking Cancellation** - Users can cancel bookings and release seats
-- **Role-Based Access Control** - USER and ORGANIZER roles with proper authorization
-- **JWT Authentication** - Secure token-based authentication
-- **Swagger Documentation** - Interactive API documentation
+---
+
+## 📋 Table of Contents
+
+- [Features](#-features)
+- [Tech Stack](#-tech-stack)
+- [Project Structure](#-project-structure)
+- [Prerequisites](#-prerequisites)
+- [Installation](#-installation)
+- [Environment Variables](#-environment-variables)
+- [Database Setup](#-database-setup)
+- [Running the Application](#-running-the-application)
+- [API Documentation](#-api-documentation)
+- [Testing](#-testing)
+- [Key Implementation Details](#-key-implementation-details)
+- [Documentation](#-documentation)
+- [Troubleshooting](#-troubleshooting)
+
+---
+
+## ✨ Features
+
+### Core Functionality
+- 🎪 **Event Management** - Create, update, and delete events
+- 🎟️ **Seat Booking** - Book available seats with real-time availability
+- 🔒 **Optimistic Locking** - Prevents double booking under high concurrency
+- 🔄 **Automatic Retry Logic** - Handles concurrent booking conflicts gracefully
+- ❌ **Booking Cancellation** - Cancel bookings and automatically release seats
+- 👥 **Role-Based Access** - USER and ORGANIZER roles with proper authorization
+
+### Technical Features
+- 🔐 **JWT Authentication** - Secure token-based authentication
+- 📧 **OTP Verification** - Email-based OTP for registration
+- 🛡️ **Type Safety** - Full TypeScript with Prisma-generated types
+- 📚 **Swagger Documentation** - Interactive API documentation
+- ✅ **Input Validation** - Request validation using class-validator
+- 🔍 **Database Indexing** - Optimized queries for performance
+
+---
 
 ## 🛠️ Tech Stack
 
-- **Framework:** NestJS (TypeScript)
-- **Database:** PostgreSQL
-- **ORM:** Prisma
-- **Authentication:** JWT (JSON Web Tokens)
-- **Documentation:** Swagger/OpenAPI
-- **Validation:** class-validator, class-transformer
+| Technology | Purpose |
+|------------|---------|
+| **NestJS** | Backend framework with TypeScript |
+| **PostgreSQL** | Relational database |
+| **Prisma** | Type-safe ORM |
+| **JWT** | Authentication tokens |
+| **class-validator** | Request validation |
+| **Swagger** | API documentation |
+| **Passport** | Authentication middleware |
+
+---
+
+## 📁 Project Structure
+
+```
+event-booking-system/
+├── src/
+│   ├── auth/              # Authentication module (OTP, JWT)
+│   ├── users/             # User management
+│   ├── events/            # Event CRUD operations
+│   ├── bookings/          # Booking logic with optimistic locking
+│   ├── common/            # Shared guards, decorators, types
+│   │   ├── guards/        # JWT, Role-based guards
+│   │   ├── strategies/    # Passport strategies
+│   │   └── types/         # Shared TypeScript interfaces
+│   ├── prisma/            # Database service
+│   └── main.ts            # Application entry point
+├── prisma/
+│   ├── schema.prisma      # Database schema
+│   ├── migrations/        # Database migrations
+│   └── seeds/             # Seed data scripts
+├── docs/
+│   ├── postman/           # Postman collection
+│   ├── TECHNICAL_DESIGN.md
+│   └── DATABASE_DESIGN.md
+└── README.md              # This file
+```
+
+---
 
 ## 📋 Prerequisites
 
-- Node.js (v18 or higher)
-- PostgreSQL (v14 or higher)
-- npm or yarn
+Before you begin, ensure you have the following installed:
 
-## 🔧 Installation
+- **Node.js** (v18 or higher)
+- **PostgreSQL** (v14 or higher)
+- **npm** or **yarn**
+- **Git**
 
-1. **Clone the repository:**
+---
+
+## 🚀 Installation
+
+### 1. Clone the repository
+
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/vimalbhoutekar/event-booking-system
 cd event-booking-system
 ```
 
-2. **Install dependencies:**
+### 2. Install dependencies
+
 ```bash
 npm install
 ```
 
-3. **Setup environment variables:**
+### 3. Setup environment variables
+
 Create a `.env` file in the root directory:
-```env
-DATABASE_URL="postgresql://user:password@localhost:5432/event_booking_db"
-JWT_SECRET="your-secret-key-here"
-PORT=3000
-```
 
-4. **Run database migrations:**
 ```bash
-npx prisma migrate dev
-npx prisma generate
+cp .env.example .env
 ```
 
-5. **Seed the database (optional):**
+---
+
+## 🔐 Environment Variables
+
+Create a `.env` file with the following variables:
+
+```env
+# Database
+DATABASE_URL="postgresql://username:password@localhost:5432/event_booking_db"
+
+# JWT
+JWT_SECRET="your-super-secret-jwt-key-change-this-in-production"
+
+# Application
+PORT=3000
+NODE_ENV=development
+
+# Email Service (for OTP)
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USER=your-email@gmail.com
+MAIL_PASSWORD=your-app-password
+
+# Redis (optional, for caching)
+REDIS_URI=redis://localhost:6379
+```
+
+### Important Notes:
+- **Never commit `.env` file** to version control
+- Use strong, random values for `JWT_SECRET` in production
+- For Gmail, use [App Passwords](https://support.google.com/accounts/answer/185833)
+
+---
+
+## 🗄️ Database Setup
+
+### 1. Create PostgreSQL database
+
+```bash
+# Login to PostgreSQL
+psql -U postgres
+
+# Create database
+CREATE DATABASE event_booking_db;
+
+# Exit
+\q
+```
+
+### 2. Run Prisma migrations
+
+```bash
+# Generate Prisma Client
+npx prisma generate
+
+# Run migrations to create tables
+npx prisma migrate dev
+
+# (Optional) View database in Prisma Studio
+npx prisma studio
+```
+
+### 3. Seed database (Optional)
+
 ```bash
 npm run seed
 ```
 
-## 🚀 Running the Application
+This will create:
+- Sample admin user
+- Sample organizer user
+- Sample regular users
+- Sample events
 
-**Development mode:**
+---
+
+## ▶️ Running the Application
+
+### Development mode (with hot reload)
+
 ```bash
 npm run start:dev
 ```
 
-**Production mode:**
+### Production mode
+
 ```bash
+# Build the application
 npm run build
+
+# Start production server
 npm run start:prod
 ```
 
-Server will be running at: `http://localhost:9001`
+### Watch mode
+
+```bash
+npm run start:watch
+```
+
+The server will start on: **http://localhost:9001**
+
+---
 
 ## 📚 API Documentation
 
-Once the server is running, access Swagger documentation at:
-```
-http://localhost:3000/api-docs
+### Swagger UI
+
+Once the server is running, access interactive API documentation:
 
 ```
-## 📬 API Testing
+http://localhost:9001/api-spec
+```
 
 ### Postman Collection
 
-A complete Postman collection is available in `docs/postman/`.
-
-**Import Steps:**
-1. Open Postman
-2. Click "Import"
-3. Select `docs/postman/Event_Booking_System.postman_collection.json`
-4. Update collection variables:
-   - `BASE_URL` = `http://localhost:9001`
-5. Run "Auth - Login as Organizer" to get token
-6. Start testing!
-
-### Swagger Documentation
-
-Interactive API documentation available at:
-```
-http://localhost:9001/api-docs
-```
-
-## 🔐 Authentication
-
-### User Roles
-
-- **USER** - Can book tickets, view bookings, cancel bookings
-- **ORGANIZER** - Can create/manage events + all USER permissions
-
-### Getting Started
-
-1. **Register a user:**
-```bash
-POST /auth/register
-```
-
-2. **Login:**
-```bash
-POST /auth/login
-```
-
-3. **Use the JWT token** in Authorization header:
-```
-Authorization: Bearer <your-jwt-token>
-```
-
-## 🎫 Key Endpoints
-
-### Events
-- `GET /events` - List all events (public)
-- `GET /events/:id` - Get single event (public)
-- `POST /events` - Create event (ORGANIZER only)
-- `PUT /events/:id` - Update event (Owner only)
-- `DELETE /events/:id` - Delete event (Owner only)
-- `GET /events/organizer/my-events` - Get my events (ORGANIZER only)
-
-### Bookings
-- `POST /bookings` - Book seats (USER/ORGANIZER)
-- `GET /bookings` - Get my bookings (USER/ORGANIZER)
-- `GET /bookings/:reference` - Get booking by reference (USER/ORGANIZER)
-- `DELETE /bookings/:reference` - Cancel booking (Owner only)
-
-## 🔥 Concurrency Handling
-
-### How Optimistic Locking Works
-
-1. **Version Field:** Each event has a `version` field that increments on every update
-2. **Atomic Updates:** When booking, we check if the version matches before updating
-3. **Retry Logic:** If version mismatch occurs (someone else updated), automatically retry up to 3 times
-4. **Transaction Safety:** All operations wrapped in database transactions
-
-### Example Flow
+Import the Postman collection from:
 
 ```
-User A reads event (version: 5, availableSeats: 10)
-User B reads event (version: 5, availableSeats: 10)
-
-User A books 5 seats:
-  - Check: version still 5? ✅ Yes
-  - Update: availableSeats = 5, version = 6 ✅
-
-User B books 5 seats:
-  - Check: version still 5? ❌ No (now it's 6)
-  - Retry: Read fresh data (version: 6, availableSeats: 5)
-  - Update: availableSeats = 0, version = 7 ✅
+docs/postman/Event_Booking_System.postman_collection.json
 ```
+
+### Quick API Overview
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| **Authentication** |
+| POST | `/auth/send-code` | Send OTP for registration | Public |
+| POST | `/auth/register` | Register with OTP verification | Public |
+| POST | `/auth/login` | Login and get JWT token | Public |
+| **Events** |
+| GET | `/events` | List all events | Public |
+| GET | `/events/:id` | Get single event | Public |
+| POST | `/events` | Create event | ORGANIZER |
+| PUT | `/events/:id` | Update event | ORGANIZER (owner) |
+| DELETE | `/events/:id` | Delete event | ORGANIZER (owner) |
+| GET | `/events/organizer/my-events` | Get my events | ORGANIZER |
+| **Bookings** |
+| POST | `/bookings` | Book seats | USER/ORGANIZER |
+| GET | `/bookings` | Get my bookings | USER/ORGANIZER |
+| GET | `/bookings/:ref` | Get booking by reference | USER/ORGANIZER |
+| DELETE | `/bookings/:ref` | Cancel booking | USER/ORGANIZER (owner) |
+
+---
 
 ## 🧪 Testing
 
-### Run Tests
-```bash
-# Unit tests
-npm run test
-
-# E2E tests
-npm run test:e2e
-
-# Test coverage
-npm run test:cov
-```
-
 ### Manual Testing
 
-Use the provided Postman collection or test via Swagger UI.
+1. **Register Organizer**
+   ```bash
+   # Send OTP
+   POST /auth/send-code
+   {
+     "email": "organizer@example.com",
+     "type": "register"
+   }
+   
+   # Register with OTP
+   POST /auth/register
+   {
+     "firstname": "John",
+     "lastname": "Doe",
+     "email": "organizer@example.com",
+     "password": "SecurePass@123",
+     "country": "India",
+     "emailVerificationCode": "123456",
+     "role": "ORGANIZER"
+   }
+   ```
 
-**Concurrent Booking Test:**
-Create a simple script to simulate multiple users booking simultaneously and verify only valid bookings succeed.
+2. **Create Event**
+   ```bash
+   POST /events
+   Authorization: Bearer <organizer-token>
+   {
+     "title": "Tech Conference 2025",
+     "totalSeats": 100,
+     "status": "PUBLISHED"
+   }
+   ```
 
-## 📊 Database Schema
+3. **Book Seats**
+   ```bash
+   POST /bookings
+   Authorization: Bearer <user-token>
+   {
+     "eventId": 1,
+     "seatCount": 3
+   }
+   ```
 
-### Key Models
+### Concurrent Booking Test
 
-**User**
-- `id`, `email`, `password`
-- `role` (USER | ORGANIZER)
+Use Postman Collection Runner:
+1. Select "Create Booking" request
+2. Set iterations: 5
+3. Set delay: 0ms
+4. Run - only valid bookings will succeed!
 
-**Event**
-- `id`, `title`, `description`
-- `totalSeats`, `availableSeats`
-- `status` (DRAFT | PUBLISHED | CANCELLED | COMPLETED)
-- `version` (for optimistic locking)
-- `organizerId` (foreign key to User)
+---
 
-**Booking**
-- `id`, `userId`, `eventId`
-- `seatCount`, `status`
-- `bookingReference` (UUID)
+## 🔑 Key Implementation Details
 
-## 🔒 Security Features
+### 1. Optimistic Locking
 
-- JWT-based authentication
-- Role-based authorization guards
-- Input validation on all endpoints
-- SQL injection prevention (Prisma ORM)
-- Rate limiting ready (can be added)
+**Problem:** Multiple users booking same seats simultaneously can cause double booking.
 
-## 🚧 Future Enhancements
+**Solution:** Version-based concurrency control
 
-- [ ] Seat categories (VIP, General)
-- [ ] Real-time seat availability updates (WebSocket)
-- [ ] Email notifications for bookings
-- [ ] Payment integration
-- [ ] Booking history and analytics
-- [ ] Event search and filters
-- [ ] Rate limiting on booking APIs
+```typescript
+// Event model has a 'version' field
+model Event {
+  version Int @default(0)
+}
 
-## 📝 Project Structure
+// When booking, check version hasn't changed
+const updatedEvent = await prisma.event.updateMany({
+  where: {
+    id: eventId,
+    version: currentVersion  // Check version matches
+  },
+  data: {
+    availableSeats: availableSeats - seatCount,
+    version: currentVersion + 1  // Increment version
+  }
+});
 
+// If update count is 0, version mismatch - retry
 ```
-src/
-├── auth/           # Authentication logic
-├── users/          # User management
-├── events/         # Event CRUD operations
-├── bookings/       # Booking logic with optimistic locking
-├── common/         # Shared guards, decorators, types
-├── prisma/         # Database service
-└── main.ts         # Application entry point
+
+**Retry Logic:** Automatically retries up to 3 times with exponential backoff.
+
+### 2. Role-Based Authorization
+
+```typescript
+// User roles defined in database
+enum UserRole {
+  USER
+  ORGANIZER
+}
+
+// Protected endpoint example
+@UseGuards(JwtAuthGuard, UserRoleGuard)
+@UserRoles(UserRole.ORGANIZER)
+async createEvent() {
+  // Only ORGANIZER can access
+}
 ```
+
+### 3. Database Indexing
+
+```prisma
+model Event {
+  @@index([organizerId])  // Fast lookup of organizer's events
+  @@index([status])       // Filter by status
+  @@index([eventDate])    // Sort by date
+}
+
+model Booking {
+  @@index([userId])              // User's bookings
+  @@index([eventId])             // Event's bookings
+  @@index([bookingReference])    // Quick lookup by reference
+}
+```
+
+---
+
+## 📖 Documentation
+
+Additional documentation available in `docs/` folder:
+
+- **Technical Design Document** - `docs/TECHNICAL_DESIGN.md`
+- **Database Design** - `docs/DATABASE_DESIGN.md`
+- **Postman Collection** - `docs/postman/`
+
+---
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+**1. Database connection error**
+```
+Error: Can't reach database server
+```
+**Solution:** Check PostgreSQL is running and DATABASE_URL is correct
+
+**2. Prisma Client not generated**
+```
+Error: @prisma/client did not initialize yet
+```
+**Solution:** Run `npx prisma generate`
+
+**3. Migration failed**
+```
+Error: Migration failed to apply
+```
+**Solution:** Drop database and recreate
+```bash
+npx prisma migrate reset
+```
+
+**4. OTP not received**
+```
+Check email service logs or console output for OTP code
+```
+
+### Debug Mode
+
+Enable detailed logging:
+```env
+LOG_LEVEL=debug
+```
+
+---
 
 ## 🤝 Contributing
 
 Contributions are welcome! Please follow these steps:
 
 1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Open a Pull Request
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open Pull Request
+
+---
 
 ## 📄 License
 
 This project is licensed under the MIT License.
 
+---
+
 ## 👤 Author
 
 **Vimal Bhoutekar**
-- GitHub: [@vimalbhoutekar]
+- GitHub: [@vimalbhoutekar](https://github.com/yourusername)
 - Email: vimalbhoutekar@gmail.com
-
-## 🙏 Acknowledgments
-
-- NestJS documentation
-- Prisma documentation
-- Optimistic locking pattern references
+- LinkedIn: [vimalbhoutekar](https://linkedin.com/in/yourprofile)
 
 ---
 
-**Built with ❤️ using NestJS**
+## 🙏 Acknowledgments
+
+- [NestJS Documentation](https://docs.nestjs.com/)
+- [Prisma Documentation](https://www.prisma.io/docs/)
+- Optimistic Locking pattern references
+- My internship mentor and team
+
+---
+
+## 📞 Support
+
+For issues or questions:
+- Open an issue on GitHub
+- Email: your.email@example.com
+
+---
+
+**Built with ❤️ using NestJS and TypeScript**
