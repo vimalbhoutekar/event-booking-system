@@ -1,0 +1,146 @@
+//- templates/mail/welcome.pug
+doctype html
+html(lang='en')
+  head
+    meta(charset='UTF-8')
+    meta(name='viewport', content='width=device-width, initial-scale=1.0')
+    title Welcome to Event Booking System
+    style.
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f4f4f4;
+      }
+      .container {
+        background: white;
+        padding: 40px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      .header {
+        text-align: center;
+        padding-bottom: 20px;
+        border-bottom: 3px solid #e0234e;
+      }
+      .logo {
+        font-size: 28px;
+        font-weight: bold;
+        color: #e0234e;
+        margin-bottom: 10px;
+      }
+      .content {
+        padding: 30px 0;
+      }
+      h1 {
+        color: #e0234e;
+        font-size: 24px;
+        margin-bottom: 15px;
+      }
+      .welcome-text {
+        font-size: 16px;
+        color: #666;
+        margin-bottom: 20px;
+      }
+      .feature-box {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        margin: 20px 0;
+      }
+      .feature-item {
+        margin: 10px 0;
+        padding-left: 25px;
+        position: relative;
+      }
+      .feature-item:before {
+        content: '🎫';
+        position: absolute;
+        left: 0;
+      }
+      .cta-button {
+        display: inline-block;
+        padding: 15px 40px;
+        background: #e0234e;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        margin: 20px 0;
+        font-weight: bold;
+        text-align: center;
+      }
+      .footer {
+        text-align: center;
+        padding-top: 20px;
+        border-top: 1px solid #ddd;
+        color: #999;
+        font-size: 14px;
+      }
+      .user-role {
+        display: inline-block;
+        padding: 5px 15px;
+        background: #28a745;
+        color: white;
+        border-radius: 20px;
+        font-size: 12px;
+        margin: 10px 0;
+      }
+  body
+    .container
+      .header
+        .logo 🎫 Event Booking System
+        p Your Gateway to Amazing Events
+
+      .content
+        h1 Welcome aboard, #{ firstname }! 🎉
+
+        if role === 'ORGANIZER'
+          span.user-role ⭐ ORGANIZER ACCOUNT
+        else
+          span.user-role 👤 USER ACCOUNT
+
+        p.welcome-text
+          | Thank you for joining our platform! Your account has been successfully created and verified.
+
+        if role === 'ORGANIZER'
+          p We're excited to have you as an event organizer! You can now create and manage your events.
+
+          .feature-box
+            p
+              strong As an organizer, you can:
+            .feature-item Create unlimited events
+            .feature-item Manage seat availability in real-time
+            .feature-item Track bookings and revenue
+            .feature-item Process settlements
+
+          a.cta-button(href=`${appWebUrl}/organizer/create-event`) Create Your First Event
+        else
+          p Start exploring and booking amazing events happening around you!
+
+          .feature-box
+            p
+              strong What you can do:
+            .feature-item Browse thousands of events
+            .feature-item Secure seat booking with instant confirmation
+            .feature-item Get digital tickets via email
+            .feature-item Easy cancellation (if allowed)
+
+          a.cta-button(href=`${appWebUrl}/events`) Browse Events Now
+
+        p
+          | Need help getting started? Check out our
+          a(href=`${appWebUrl}/help`) Help Center
+          |
+          | or reply to this email.
+
+      .footer
+        p Happy booking! 🎊
+        p
+          strong Event Booking System Team
+        p
+          small This email was sent to #{ email }. If you didn't create this account, please ignore this email.
+        p
+          small © 2025 Event Booking System. All rights reserved.

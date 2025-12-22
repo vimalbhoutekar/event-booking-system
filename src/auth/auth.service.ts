@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { OtpTransport, User, UserRole } from '@prisma/client';
 import { JwtPayload, UserType } from '@Common';
@@ -10,6 +10,9 @@ import {
   SendCodeResponse,
   VerifyCodeResponse,
 } from '../otp';
+import { MailService } from 'src/mail';
+import { appConfigFactory } from '@Config';
+import { ConfigType } from '@nestjs/config';
 
 export type ValidAuthResponse = {
   accessToken: string;
@@ -27,6 +30,9 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly usersService: UsersService,
     private readonly otpService: OtpService,
+    private readonly mailService: MailService, // ADD THIS
+    @Inject(appConfigFactory.KEY) // ADD THIS
+    private readonly appConfig: ConfigType<typeof appConfigFactory>,
   ) {}
 
   private generateJwt(payload: JwtPayload, options?: JwtSignOptions): string {
@@ -40,13 +46,13 @@ export class AuthService {
   ): Promise<SendCodeResponse> {
     if (type === SendCodeRequestType.Register) {
       if (
-        transport === OtpTransport.Email &&
+        transport === OtpTransport.EMAIL &&
         (await this.usersService.isEmailExist(target))
       ) {
         throw new Error('Email already in use');
       }
       if (
-        transport === OtpTransport.Mobile &&
+        transport === OtpTransport.MOBILE &&
         (await this.usersService.isMobileExist(target))
       ) {
         throw new Error('Mobile already in use');
@@ -55,7 +61,7 @@ export class AuthService {
       return await this.otpService.send({
         context: OtpContext.Register,
         target,
-        ...(transport === OtpTransport.Email
+        ...(transport === OtpTransport.EMAIL
           ? {
               transport,
               transportParams: {
@@ -98,13 +104,13 @@ export class AuthService {
         this.otpService.verify(
           data.emailVerificationCode,
           data.email,
-          OtpTransport.Email,
+          OtpTransport.EMAIL,
         ),
         data.mobile &&
           this.otpService.verify(
             data.mobileVerificationCode || '',
             data.mobile,
-            OtpTransport.Mobile,
+            OtpTransport.MOBILE,
           ),
       ],
     );
@@ -128,6 +134,27 @@ export class AuthService {
       country: data.country,
       role: data.role,
     });
+
+    // Send welcome email (non-blocking - don't await)
+    this.mailService
+      .send({
+        to: user.email,
+        subject: `Welcome to Event Booking System, ${user.firstname}!`,
+        mailBodyOrTemplate: {
+          name: 'welcome',
+          data: {
+            firstname: user.firstname,
+            email: user.email,
+            role: user.role,
+            appWebUrl: this.appConfig.appWebUrl || 'http://localhost:9001',
+          },
+        },
+      })
+      .catch((err) => {
+        // Log error but don't fail registration
+        console.error('Failed to send welcome email:', err);
+      });
+
     return {
       accessToken: this.generateJwt({
         sub: user.id,

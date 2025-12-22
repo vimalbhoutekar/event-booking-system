@@ -1,7 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
-export class UpdateProfileDetailsRequestDto {
+export class UpdateAdminProfileRequestDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()

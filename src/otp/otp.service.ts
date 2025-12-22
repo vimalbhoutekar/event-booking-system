@@ -41,11 +41,11 @@ type OtpMailParams = {
 
 type OtpTransportPayload = { context: OtpContext } & (
   | {
-      transport: typeof OtpTransport.Email;
+      transport: typeof OtpTransport.EMAIL;
       transportParams: { username: string };
     }
   | {
-      transport: typeof OtpTransport.Mobile;
+      transport: typeof OtpTransport.MOBILE;
     }
 );
 
@@ -131,7 +131,7 @@ export class OtpService {
   }
 
   private sendEmail(target: string, params: OtpMailParams): void {
-    if (!this.utilsService.isProductionApp()) return;
+    // if (!this.utilsService.isProductionApp()) return;
 
     this.mailService
       .send({
@@ -202,7 +202,7 @@ export class OtpService {
       timeout: number;
     } & OtpTransportPayload,
   ): void {
-    if (args.transport === OtpTransport.Mobile) {
+    if (args.transport === OtpTransport.MOBILE) {
       return this.sendSMS(
         args.target,
         this.getContextSmsParams({
@@ -213,7 +213,7 @@ export class OtpService {
       );
     }
 
-    if (args.transport === OtpTransport.Email) {
+    if (args.transport === OtpTransport.EMAIL) {
       return this.sendEmail(
         args.target,
         this.getContextMailParams({
@@ -260,7 +260,7 @@ export class OtpService {
         target: args.target,
         code,
         timeout: config.timeout,
-        ...(args.transport === OtpTransport.Email
+        ...(args.transport === OtpTransport.EMAIL
           ? { transport: args.transport, transportParams: args.transportParams }
           : { transport: args.transport }),
       });
@@ -308,7 +308,7 @@ export class OtpService {
         target: args.target,
         code,
         timeout: config.timeout,
-        ...(args.transport === OtpTransport.Email
+        ...(args.transport === OtpTransport.EMAIL
           ? { transport: args.transport, transportParams: args.transportParams }
           : { transport: args.transport }),
       });

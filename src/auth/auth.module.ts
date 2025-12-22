@@ -8,12 +8,14 @@ import { GoogleStrategy, LocalStrategy } from './strategies';
 import { AdminModule } from '../admin';
 import { UsersModule } from '../users';
 import { OtpModule } from '../otp';
+import { MailModule } from 'src/mail';
 
 @Module({
   imports: [
     AdminModule,
     UsersModule,
     OtpModule,
+    MailModule,
     JwtModule.registerAsync({
       useFactory: (config: ConfigType<typeof jwtConfigFactory>) => ({
         secret: config.secret,

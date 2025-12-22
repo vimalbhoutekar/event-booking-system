@@ -83,6 +83,9 @@ async function bootstrap() {
     path.join(process.cwd(), configService.get('STORAGE_DIR')),
     { prefix: `/${configService.get('STORAGE_DIR')}` },
   );
+  app.useStaticAssets(path.join(process.cwd(), './uploads/qr-codes'), {
+    prefix: '/qr-codes',
+  });
   app.useStaticAssets(path.join(process.cwd(), 'static'));
 
   const config = new DocumentBuilder()

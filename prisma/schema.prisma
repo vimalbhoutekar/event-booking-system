@@ -11,7 +11,7 @@ generator client {
 }
 
 enum AdminStatus {
-  Active @map("active")
+  ACTIVE @map("active")
 
   @@map("admin_status")
 }
@@ -22,7 +22,7 @@ model Admin {
   lastname     String
   email        String      @unique
   profileImage String?     @map("profile_image")
-  status       AdminStatus @default(Active)
+  status       AdminStatus @default(ACTIVE)
   createdAt    DateTime    @default(now()) @map("created_at")
   updatedAt    DateTime    @updatedAt @map("updated_at")
   meta         AdminMeta?
@@ -40,33 +40,59 @@ model AdminMeta {
 }
 
 enum UserStatus {
-  Active  @map("active")
-  Blocked @map("blocked")
+  ACTIVE  @map("active")
+  BLOCKED @map("blocked")
 
   @@map("user_status")
 }
 
 model User {
-  id           Int           @id @default(autoincrement())
+  id           Int        @id @default(autoincrement())
   firstname    String
   lastname     String
-  username     String?       @unique
-  email        String        @unique
-  dialCode     String?       @map("dial_code")
-  mobile       String?       @unique
-  profileImage String?       @map("profile_image")
-  isVerified   Boolean       @default(false) @map("is_verified")
+  username     String?    @unique
+  email        String     @unique
+  dialCode     String?    @map("dial_code")
+  mobile       String?    @unique
+  profileImage String?    @map("profile_image")
+  isVerified   Boolean    @default(false) @map("is_verified")
   country      String?
-  status       UserStatus    @default(Active)
-  role         UserRole      @default(USER)
-  createdAt    DateTime      @default(now()) @map("created_at")
-  updatedAt    DateTime      @updatedAt @map("updated_at")
-  meta         UserMeta?
-  settings     UserSetting[]
+  status       UserStatus @default(ACTIVE)
+  role         UserRole   @default(USER)
 
-  eventsCreated Event[]   @relation("EventOrganizer")
-  bookings      Booking[] @relation("UserBookings")
+  // Organizer Fields
+  organizerVerificationStatus OrganizerVerificationStatus? @map("organizer_verification_status")
+  businessName                String?                      @map("business_name")
+  gstNumber                   String?                      @map("gst_number")
+  panNumber                   String?                      @map("pan_number")
 
+  // Bank Details
+  bankAccountNumber     String? @map("bank_account_number")
+  bankIfscCode          String? @map("bank_ifsc_code")
+  bankAccountHolderName String? @map("bank_account_holder_name")
+  bankName              String? @map("bank_name")
+
+  // Documents
+  documents Json?
+
+  // Soft Delete
+  isDeleted Boolean   @default(false) @map("is_deleted")
+  deletedAt DateTime? @map("deleted_at")
+
+  // Relations
+  meta          UserMeta?
+  settings      UserSetting[]
+  eventsCreated Event[]       @relation("EventOrganizer")
+  bookings      Booking[]     @relation("UserBookings")
+  settlements   Settlement[]  @relation("OrganizerSettlements")
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([role])
+  @@index([organizerVerificationStatus])
+  @@index([isDeleted])
   @@map("user")
 }
 
@@ -88,8 +114,8 @@ enum UserRole {
 }
 
 enum OtpTransport {
-  Email  @map("email")
-  Mobile @map("mobile")
+  EMAIL  @map("email")
+  MOBILE @map("mobile")
 
   @@map("otp_transport")
 }
@@ -109,16 +135,16 @@ model Otp {
 }
 
 enum SettingType {
-  Binary       @map("binary")
-  MultiSelect  @map("multi_select")
-  SingleSelect @map("single_select")
+  BINARY        @map("binary")
+  MULTI_SELECT  @map("multi_select")
+  SINGLE_SELECT @map("single_select")
 
   @@map("setting_type")
 }
 
 enum SettingContext {
-  User   @map("user")
-  System @map("System")
+  USER   @map("user")
+  SYSTEM @map("system")
 
   @@map("setting_context")
 }
@@ -174,69 +200,382 @@ model SystemSetting {
   @@map("system_setting")
 }
 
-// EVENT BOOKING SYSTEM MODEL 
+// ==================== ENUMS ====================
 
 enum EventStatus {
-  DRAFT      @map("draft")
-  PUBLISHED  @map("published")
-  CANCELLED  @map("cancelled")
-  COMPLETED  @map("completed")
+  DRAFT     @map("draft")
+  PUBLISHED @map("published")
+  CANCELLED @map("cancelled")
+  COMPLETED @map("completed")
 
   @@map("event_status")
 }
 
+enum EventCategory {
+  CONCERT    @map("concert")
+  SPORTS     @map("sports")
+  CONFERENCE @map("conference")
+  WORKSHOP   @map("workshop")
+  EXHIBITION @map("exhibition")
+  THEATER    @map("theater")
+  COMEDY     @map("comedy")
+  MUSIC      @map("music")
+  OTHER      @map("other")
+
+  @@map("event_category")
+}
+
 enum BookingStatus {
-  CONFIRMED  @map("confirmed")
-  CANCELLED  @map("cancelled")
+  PENDING   @map("pending")
+  CONFIRMED @map("confirmed")
+  EXPIRED   @map("expired")
+  CANCELLED @map("cancelled")
+  REFUNDED  @map("refunded")
+  ATTENDED  @map("attended")
 
   @@map("booking_status")
 }
 
+enum PaymentStatus {
+  PENDING   @map("pending")
+  COMPLETED @map("completed")
+  FAILED    @map("failed")
+  REFUNDED  @map("refunded")
+
+  @@map("payment_status")
+}
+
+enum RefundStatus {
+  PENDING   @map("pending")
+  APPROVED  @map("approved")
+  REJECTED  @map("rejected")
+  PROCESSED @map("processed")
+
+  @@map("refund_status")
+}
+
+enum SettlementStatus {
+  PENDING    @map("pending")
+  PROCESSING @map("processing")
+  COMPLETED  @map("completed")
+  FAILED     @map("failed")
+
+  @@map("settlement_status")
+}
+
+enum OrganizerVerificationStatus {
+  PENDING  @map("pending")
+  VERIFIED @map("verified")
+  REJECTED @map("rejected")
+
+  @@map("organizer_verification_status")
+}
+
+// ==================== EVENT MODEL ====================
+
 model Event {
-  id              Int          @id @default(autoincrement())
-  title           String
-  description     String?      @db.Text
-  totalSeats      Int          @map("total_seats")
-  availableSeats  Int          @map("available_seats")
-  status          EventStatus  @default(DRAFT)
-  
-  version         Int          @default(0)
-  
-  eventDate       DateTime?    @map("event_date")
-  
-  organizerId     Int          @map("organizer_id")
-  organizer       User         @relation("EventOrganizer", fields: [organizerId], references: [id], onDelete: Cascade)
-  
-  bookings        Booking[]    @relation("EventBookings")
-  
-  createdAt       DateTime     @default(now()) @map("created_at")
-  updatedAt       DateTime     @updatedAt @map("updated_at")
+  id          Int     @id @default(autoincrement())
+  title       String
+  description String? @db.Text
+
+  // Seat Management
+  totalSeats     Int @map("total_seats")
+  availableSeats Int @map("available_seats")
+
+  // Pricing
+  basePrice   Decimal @map("base_price") @db.Decimal(10, 2)
+  platformFee Decimal @default(0) @map("platform_fee") @db.Decimal(10, 2)
+  finalPrice  Decimal @map("final_price") @db.Decimal(10, 2)
+  currency    String  @default("INR")
+
+  // Event Details
+  category EventCategory @default(OTHER)
+  tags     String[]      @default([])
+
+  // Location & Venue
+  venue     String?
+  address   String?  @db.Text
+  city      String?
+  state     String?
+  country   String?
+  pincode   String?
+  latitude  Decimal? @db.Decimal(10, 8)
+  longitude Decimal? @db.Decimal(11, 8)
+
+  // Media
+  coverImage String?  @map("cover_image")
+  images     String[] @default([])
+  videoUrl   String?  @map("video_url")
+
+  // Timing
+  eventDate DateTime? @map("event_date")
+  startTime DateTime? @map("start_time")
+  endTime   DateTime? @map("end_time")
+  duration  Int?
+
+  // Cancellation Policy
+  cancellationAllowed  Boolean  @default(true) @map("cancellation_allowed")
+  cancellationDeadline Int?     @map("cancellation_deadline")
+  cancellationCharges  Decimal? @default(0) @map("cancellation_charges") @db.Decimal(5, 2)
+
+  // Status & Versioning
+  status  EventStatus @default(DRAFT)
+  version Int         @default(0)
+
+  // Statistics
+  totalBookings Int     @default(0) @map("total_bookings")
+  totalRevenue  Decimal @default(0) @map("total_revenue") @db.Decimal(12, 2)
+
+  // Soft Delete
+  isDeleted Boolean   @default(false) @map("is_deleted")
+  deletedAt DateTime? @map("deleted_at")
+  deletedBy Int?      @map("deleted_by")
+
+  // Relations
+  organizerId Int  @map("organizer_id")
+  organizer   User @relation("EventOrganizer", fields: [organizerId], references: [id], onDelete: Cascade)
+
+  bookings Booking[] @relation("EventBookings")
+
+  // Timestamps
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  publishedAt DateTime? @map("published_at")
 
   @@index([organizerId])
   @@index([status])
+  @@index([category])
   @@index([eventDate])
+  @@index([city])
+  @@index([isDeleted])
   @@map("event")
 }
 
+// ==================== BOOKING MODEL ====================
+
 model Booking {
-  id              Int            @id @default(autoincrement())
-  seatCount       Int            @map("seat_count")
-  status          BookingStatus  @default(CONFIRMED)
-  
-  userId          Int            @map("user_id")
-  user            User           @relation("UserBookings", fields: [userId], references: [id], onDelete: Cascade)
-  
-  eventId         Int            @map("event_id")
-  event           Event          @relation("EventBookings", fields: [eventId], references: [id], onDelete: Cascade)
-  
+  id Int @id @default(autoincrement())
+
+  // Booking Details
+  seatCount        Int           @map("seat_count")
+  status           BookingStatus @default(PENDING)
   bookingReference String        @unique @default(uuid()) @map("booking_reference")
-  
-  createdAt       DateTime       @default(now()) @map("created_at")
-  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  // Idempotency Key
+  idempotencyKey String? @unique @map("idempotency_key")
+
+  // Attendee Information
+  attendeeName  String? @map("attendee_name")
+  attendeeEmail String? @map("attendee_email")
+  attendeePhone String? @map("attendee_phone")
+
+  // Pricing Breakdown
+  baseAmount  Decimal @map("base_amount") @db.Decimal(10, 2)
+  platformFee Decimal @map("platform_fee") @db.Decimal(10, 2)
+  totalAmount Decimal @map("total_amount") @db.Decimal(10, 2)
+  currency    String  @default("INR")
+
+  // Organizer Settlement
+  organizerAmount Decimal @map("organizer_amount") @db.Decimal(10, 2)
+
+  // Ticket (Single QR for all seats)
+  qrCode     String? @unique @map("qr_code") // Just filename: "qr-550e8400.png"
+  qrCodeData String? @map("qr_code_data") @db.Text // Encrypted booking data
+  ticketUrl  String? @map("ticket_url") // PDF path: "/tickets/ticket-550e8400.pdf"
+
+  // Entry Tracking
+  isScanned Boolean   @default(false) @map("is_scanned")
+  scannedAt DateTime? @map("scanned_at")
+  scannedBy Int?      @map("scanned_by")
+
+  // Expiry
+  expiresAt DateTime @map("expires_at")
+
+  // Soft Delete
+  isDeleted Boolean   @default(false) @map("is_deleted")
+  deletedAt DateTime? @map("deleted_at")
+
+  // Relations
+  userId Int  @map("user_id")
+  user   User @relation("UserBookings", fields: [userId], references: [id], onDelete: Cascade)
+
+  eventId Int   @map("event_id")
+  event   Event @relation("EventBookings", fields: [eventId], references: [id], onDelete: Cascade)
+
+  payment            Payment?            @relation("BookingPayment")
+  cancellation       Cancellation?       @relation("BookingCancellation")
+  settlementBookings SettlementBooking[]
+
+  // Timestamps
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  confirmedAt DateTime? @map("confirmed_at")
 
   @@index([userId])
   @@index([eventId])
   @@index([bookingReference])
+  @@index([status])
+  @@index([expiresAt])
+  @@index([qrCode])
+  @@index([idempotencyKey])
+  @@index([isDeleted])
   @@map("booking")
 }
 
+// ==================== PAYMENT MODEL ====================
+
+model Payment {
+  id Int @id @default(autoincrement())
+
+  // Booking Reference
+  bookingId Int     @unique @map("booking_id")
+  booking   Booking @relation("BookingPayment", fields: [bookingId], references: [id], onDelete: Cascade)
+
+  // Payment Details
+  amount   Decimal       @db.Decimal(10, 2)
+  currency String        @default("INR")
+  status   PaymentStatus @default(PENDING)
+
+  // Razorpay Fields (Idempotency via Order ID)
+  razorpayOrderId   String? @unique @map("razorpay_order_id")
+  razorpayPaymentId String? @unique @map("razorpay_payment_id")
+  razorpaySignature String? @map("razorpay_signature")
+
+  // Payment Method & Details
+  paymentMethod String? @map("payment_method")
+  cardLast4     String? @map("card_last4")
+  cardNetwork   String? @map("card_network")
+  bankName      String? @map("bank_name")
+  upiId         String? @map("upi_id")
+  walletName    String? @map("wallet_name")
+
+  // Failure Tracking
+  failureReason    String? @map("failure_reason")
+  failureCode      String? @map("failure_code")
+  errorDescription String? @map("error_description") @db.Text
+
+  // Fraud Detection
+  ipAddress String? @map("ip_address")
+  userAgent String? @map("user_agent") @db.Text
+
+  // Timestamps
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  completedAt DateTime? @map("completed_at")
+
+  @@index([razorpayOrderId])
+  @@index([razorpayPaymentId])
+  @@index([status])
+  @@map("payment")
+}
+
+// ==================== CANCELLATION & REFUND ====================
+
+model Cancellation {
+  id Int @id @default(autoincrement())
+
+  // Booking Reference
+  bookingId Int     @unique @map("booking_id")
+  booking   Booking @relation("BookingCancellation", fields: [bookingId], references: [id], onDelete: Cascade)
+
+  // Cancellation Details
+  reason      String? @db.Text
+  cancelledBy String  @map("cancelled_by")
+
+  // Refund Calculation
+  originalAmount      Decimal @map("original_amount") @db.Decimal(10, 2)
+  cancellationFee     Decimal @default(0) @map("cancellation_fee") @db.Decimal(10, 2)
+  refundAmount        Decimal @map("refund_amount") @db.Decimal(10, 2)
+  platformFeeRefunded Decimal @default(0) @map("platform_fee_refunded") @db.Decimal(10, 2)
+
+  // Refund Status
+  refundStatus      RefundStatus @default(PENDING) @map("refund_status")
+  refundId          String?      @unique @map("refund_id")
+  refundProcessedAt DateTime?    @map("refund_processed_at")
+
+  // Admin Review
+  reviewedBy  Int?    @map("reviewed_by")
+  reviewNotes String? @map("review_notes") @db.Text
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([refundStatus])
+  @@index([bookingId])
+  @@map("cancellation")
+}
+
+// ==================== SETTLEMENT MODEL ====================
+
+model Settlement {
+  id Int @id @default(autoincrement())
+
+  // Settlement Period
+  periodStart DateTime @map("period_start")
+  periodEnd   DateTime @map("period_end")
+
+  // Organizer
+  organizerId Int  @map("organizer_id")
+  organizer   User @relation("OrganizerSettlements", fields: [organizerId], references: [id], onDelete: Cascade)
+
+  // Financial Details
+  totalBookings      Int     @map("total_bookings")
+  grossAmount        Decimal @map("gross_amount") @db.Decimal(12, 2)
+  platformCommission Decimal @map("platform_commission") @db.Decimal(12, 2)
+  payableAmount      Decimal @map("payable_amount") @db.Decimal(12, 2)
+
+  // Deductions
+  refundDeductions Decimal @default(0) @map("refund_deductions") @db.Decimal(12, 2)
+  otherDeductions  Decimal @default(0) @map("other_deductions") @db.Decimal(12, 2)
+
+  // Payment Details
+  status        SettlementStatus @default(PENDING)
+  paymentMode   String?          @map("payment_mode")
+  transactionId String?          @unique @map("transaction_id")
+  accountNumber String?          @map("account_number")
+  ifscCode      String?          @map("ifsc_code")
+
+  // Admin Action
+  processedBy Int?    @map("processed_by")
+  notes       String? @db.Text
+
+  // Junction Table Relation
+  settlementBookings SettlementBooking[]
+
+  // Timestamps
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  settledAt DateTime? @map("settled_at")
+
+  @@index([organizerId])
+  @@index([status])
+  @@index([periodStart])
+  @@index([periodEnd])
+  @@map("settlement")
+}
+
+// ==================== JUNCTION TABLE ====================
+
+model SettlementBooking {
+  id Int @id @default(autoincrement())
+
+  // Relations
+  settlementId Int        @map("settlement_id")
+  settlement   Settlement @relation(fields: [settlementId], references: [id], onDelete: Cascade)
+
+  bookingId Int     @map("booking_id")
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  // Financial Snapshot
+  amount     Decimal @db.Decimal(10, 2)
+  commission Decimal @db.Decimal(10, 2)
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([settlementId, bookingId])
+  @@index([settlementId])
+  @@index([bookingId])
+  @@map("settlement_booking")
+}

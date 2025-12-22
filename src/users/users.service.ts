@@ -153,7 +153,7 @@ export class UsersService {
   ): Promise<ValidatedUser | false | null> {
     const user = await this.getByEmail(email);
     if (!user) return null;
-    if (user.status !== UserStatus.Active) {
+    if (user.status !== UserStatus.ACTIVE) {
       throw new Error(
         'Your account has been temporarily suspended/blocked by the system. Please contact customer support for assistance',
       );
@@ -287,7 +287,7 @@ export class UsersService {
       dialCode?: string;
       mobile?: string;
       country?: string;
-       role?: UserRole;
+      role?: UserRole;
     },
     options?: { tx?: Prisma.TransactionClient },
   ): Promise<User> {
@@ -318,7 +318,7 @@ export class UsersService {
         dialCode: data.dialCode,
         mobile: data.mobile,
         country: data.country,
-          role: data.role, 
+        role: data.role,
       },
       where: {
         id: data.userId,
@@ -450,14 +450,14 @@ export class UsersService {
       response.mobile = await this.otpService.send({
         context: OtpContext.ResetPassword,
         target: mobile,
-        transport: OtpTransport.Mobile,
+        transport: OtpTransport.MOBILE,
       });
     }
     if (email) {
       response.email = await this.otpService.send({
         context: OtpContext.ResetPassword,
         target: email,
-        transport: OtpTransport.Email,
+        transport: OtpTransport.EMAIL,
         transportParams: {
           username: user.firstname.concat(' ', user.lastname),
         },
@@ -490,10 +490,10 @@ export class UsersService {
       response = await this.otpService.verify(
         code,
         mobile,
-        OtpTransport.Mobile,
+        OtpTransport.MOBILE,
       );
     if (email)
-      response = await this.otpService.verify(code, email, OtpTransport.Email);
+      response = await this.otpService.verify(code, email, OtpTransport.EMAIL);
     if (!response) throw new Error('Invalid email or mobile');
     if (response.status === false)
       throw new Error('Incorrect verification code');

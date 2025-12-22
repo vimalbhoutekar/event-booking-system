@@ -14,8 +14,21 @@ export type ResetPasswordVerificationCodeMailTemplate = {
   data: VerificationCodeMailPayload;
 };
 
+type WelcomeMailPayload = {
+  firstname: string;
+  email: string;
+  role: 'USER' | 'ORGANIZER';
+  appWebUrl: string;
+};
+
+export type WelcomeMailTemplate = {
+  name: 'welcome';
+  data: WelcomeMailPayload;
+};
+
 export type MailTemplate =
   | RegisterVerificationCodeMailTemplate
-  | ResetPasswordVerificationCodeMailTemplate;
+  | ResetPasswordVerificationCodeMailTemplate
+  | WelcomeMailTemplate;
 
 export type MailParams = { subject: string; template: MailTemplate };

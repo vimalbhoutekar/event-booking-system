@@ -2,27 +2,28 @@ import {
   Controller,
   Get,
   Post,
-  Delete,
   Body,
   Param,
   Query,
   UseGuards,
   Request,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiTags,
   ApiOperation,
   ApiResponse,
-  ApiParam,
 } from '@nestjs/swagger';
 import { BookingsService } from './bookings.service';
-import { CreateBookingRequestDto, GetBookingsRequestDto } from './dto';
+import {
+  CreateBookingRequestDto,
+  VerifyBookingPaymentDto,
+  GetBookingsRequestDto,
+} from './dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
-import { UserRoleGuard, UserRoles } from '../common/guards/user-role.guard';
-import { UserRole } from '@prisma/client';
 import { AuthenticatedRequest, BaseController } from '@Common';
-import { CacheTTL } from '@nestjs/cache-manager';
 
 @ApiTags('Bookings')
 @Controller('bookings')
@@ -31,54 +32,47 @@ export class BookingsController extends BaseController {
     super();
   }
 
+  /**
+   * Create new booking with payment order
+   * Step 1 of payment flow
+   */
   @Post()
-  @UserRoles(UserRole.USER, UserRole.ORGANIZER)
-  @UseGuards(JwtAuthGuard, UserRoleGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Book seats for an event',
-    description:
-      'Creates a booking with optimistic locking to prevent double booking. Includes automatic retry logic for concurrent requests.',
-  })
+  @ApiOperation({ summary: 'Create booking and get payment order' })
   @ApiResponse({
     status: 201,
-    description: 'Booking created successfully',
+    description: 'Booking created successfully with Razorpay order',
     schema: {
       example: {
-        success: true,
-        message: 'Booking confirmed successfully',
-        data: {
+        booking: {
           id: 1,
-          userId: 5,
-          eventId: 10,
+          bookingReference: '550e8400-e29b-41d4-a716-446655440000',
+          status: 'PENDING',
           seatCount: 2,
-          status: 'CONFIRMED',
-          bookingReference: '7f3a8b2c-4d1e-9a0f-6c5b-8e7d9f0a1b2c',
-          createdAt: '2025-11-26T12:00:00Z',
-          event: {
-            id: 10,
-            title: 'Tech Conference 2025',
-            eventDate: '2025-12-31T18:00:00Z',
-          },
+          baseAmount: 1000,
+          platformFee: 118,
+          totalAmount: 1118,
+          expiresAt: '2025-12-06T12:05:00Z',
+        },
+        payment: {
+          orderId: 'order_MNqR8zxPqZqKj4',
+          amount: 111800,
+          currency: 'INR',
+          razorpayKeyId: 'rzp_test_xxxxx',
         },
       },
     },
   })
   @ApiResponse({
     status: 400,
-    description: 'Bad Request - Invalid input or event not bookable',
+    description: 'Bad Request - Invalid input or seats not available',
   })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - Authentication required',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Not Found - Event does not exist',
-  })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Not logged in' })
+  @ApiResponse({ status: 404, description: 'Event not found' })
   @ApiResponse({
     status: 409,
-    description: 'Conflict - Not enough seats or booking conflict',
+    description: 'Conflict - Seats no longer available',
   })
   async createBooking(
     @Request() req: AuthenticatedRequest,
@@ -88,15 +82,54 @@ export class BookingsController extends BaseController {
     return this.bookingsService.createBooking(ctx.user.id, dto);
   }
 
-  @Get()
-  @CacheTTL(1)
-  @UserRoles(UserRole.USER, UserRole.ORGANIZER)
-  @UseGuards(JwtAuthGuard, UserRoleGuard)
+  /**
+   * Verify payment and confirm booking
+   * Step 2 of payment flow (called after Razorpay payment)
+   */
+  @Post('verify-payment')
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Get my bookings',
-    description: 'Retrieve all bookings for the authenticated user',
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verify payment and confirm booking' })
+  @ApiResponse({
+    status: 200,
+    description: 'Payment verified and booking confirmed',
+    schema: {
+      example: {
+        success: true,
+        message: 'Booking confirmed successfully',
+        booking: {
+          id: 1,
+          bookingReference: '550e8400-e29b-41d4-a716-446655440000',
+          status: 'CONFIRMED',
+          seatCount: 2,
+          totalAmount: 1118,
+          confirmedAt: '2025-12-06T12:03:00Z',
+        },
+      },
+    },
   })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Invalid signature or booking expired',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Booking not found' })
+  async verifyPayment(
+    @Request() req: AuthenticatedRequest,
+    @Body() dto: VerifyBookingPaymentDto,
+  ) {
+    const ctx = this.getContext(req);
+    return this.bookingsService.verifyAndConfirmBooking(ctx.user.id, dto);
+  }
+
+  /**
+   * Get all bookings for logged-in user
+   */
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get my bookings' })
   @ApiResponse({
     status: 200,
     description: 'Bookings retrieved successfully',
@@ -105,22 +138,20 @@ export class BookingsController extends BaseController {
         data: [
           {
             id: 1,
-            userId: 5,
-            eventId: 10,
-            seatCount: 2,
+            bookingReference: '550e8400-e29b-41d4-a716-446655440000',
             status: 'CONFIRMED',
-            bookingReference: '7f3a8b2c-4d1e-9a0f-6c5b-8e7d9f0a1b2c',
-            createdAt: '2025-11-26T12:00:00Z',
+            seatCount: 2,
+            totalAmount: 1118,
             event: {
-              id: 10,
+              id: 1,
               title: 'Tech Conference 2025',
               eventDate: '2025-12-31T18:00:00Z',
-              status: 'PUBLISHED',
+              venue: 'Convention Center',
             },
           },
         ],
         meta: {
-          total: 1,
+          total: 10,
           page: 1,
           limit: 10,
           totalPages: 1,
@@ -137,87 +168,24 @@ export class BookingsController extends BaseController {
     return this.bookingsService.getUserBookings(ctx.user.id, query);
   }
 
-  @Get(':bookingReference')
-  @CacheTTL(1)
-  @UserRoles(UserRole.USER, UserRole.ORGANIZER)
-  @UseGuards(JwtAuthGuard, UserRoleGuard)
+  /**
+   * Get single booking by reference
+   */
+  @Get(':reference')
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Get booking by reference',
-    description: 'Retrieve booking details using booking reference ID',
-  })
-  @ApiParam({
-    name: 'bookingReference',
-    description: 'Booking reference UUID',
-    example: '7f3a8b2c-4d1e-9a0f-6c5b-8e7d9f0a1b2c',
-  })
-  @ApiResponse({ status: 200, description: 'Booking retrieved successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Not your booking' })
-  @ApiResponse({ status: 404, description: 'Booking not found' })
-  async getBookingByReference(
-    @Param('bookingReference') bookingReference: string,
-    @Request() req: AuthenticatedRequest,
-  ) {
-    const ctx = this.getContext(req);
-    return this.bookingsService.getBookingByReference(
-      bookingReference,
-      ctx.user.id,
-    );
-  }
-
-  @Delete(':bookingReference')
-  @UserRoles(UserRole.USER, UserRole.ORGANIZER)
-  @UseGuards(JwtAuthGuard, UserRoleGuard)
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Cancel a booking',
-    description:
-      'Cancel a booking and release seats back to the event. Uses optimistic locking to ensure data consistency.',
-  })
-  @ApiParam({
-    name: 'bookingReference',
-    description: 'Booking reference UUID',
-    example: '7f3a8b2c-4d1e-9a0f-6c5b-8e7d9f0a1b2c',
-  })
+  @ApiOperation({ summary: 'Get booking by reference' })
   @ApiResponse({
     status: 200,
-    description: 'Booking cancelled successfully',
-    schema: {
-      example: {
-        success: true,
-        message: 'Booking cancelled successfully. Seats have been released.',
-        data: {
-          id: 1,
-          userId: 5,
-          eventId: 10,
-          seatCount: 2,
-          status: 'CANCELLED',
-          bookingReference: '7f3a8b2c-4d1e-9a0f-6c5b-8e7d9f0a1b2c',
-          event: {
-            id: 10,
-            title: 'Tech Conference 2025',
-          },
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Bad Request - Already cancelled or past event',
+    description: 'Booking details retrieved',
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Not your booking' })
   @ApiResponse({ status: 404, description: 'Booking not found' })
-  @ApiResponse({
-    status: 409,
-    description: 'Conflict - Cancellation conflict, retry',
-  })
-  async cancelBooking(
-    @Param('bookingReference') bookingReference: string,
+  async getBookingByReference(
     @Request() req: AuthenticatedRequest,
+    @Param('reference') reference: string,
   ) {
     const ctx = this.getContext(req);
-    return this.bookingsService.cancelBooking(bookingReference, ctx.user.id);
+    return this.bookingsService.getBookingByReference(ctx.user.id, reference);
   }
 }

@@ -3,17 +3,26 @@ import {
   Body,
   Controller,
   Get,
+  HttpStatus,
   Param,
   ParseEnumPipe,
+  ParseFilePipeBuilder,
   ParseIntPipe,
   Patch,
   Post,
   Query,
   Req,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiParam, ApiTags } from '@nestjs/swagger';
-import { UserStatus } from '@prisma/client';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiParam,
+  ApiTags,
+} from '@nestjs/swagger';
 import {
   AuthenticatedRequest,
   BaseController,
@@ -22,22 +31,29 @@ import {
   UserType,
   Roles,
   AccessGuard,
+  StorageService,
+  File,
 } from '@Common';
 import { UsersService } from './users.service';
 import {
   ChangePasswordRequestDto,
   GetUsersRequestDto,
-  UpdateProfileDetailsRequestDto,
   UpdateProfileImageRequestDto,
+  UpdateUserProfileBaseRequestDto,
   UpdateUserProfileRequestDto,
+  UpdateUserStatusDto,
 } from './dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('User')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, AccessGuard)
 @Controller('users')
 export class UsersController extends BaseController {
-  constructor(private readonly usersService: UsersService) {
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly storageService: StorageService,
+  ) {
     super();
   }
 
@@ -61,7 +77,7 @@ export class UsersController extends BaseController {
   @Patch('me')
   async updateProfileDetails(
     @Req() req: AuthenticatedRequest,
-    @Body() data: UpdateProfileDetailsRequestDto,
+    @Body() data: UpdateUserProfileBaseRequestDto,
   ) {
     if (data.mobile && (!data.dialCode || !data.country)) {
       throw new BadRequestException();
@@ -108,13 +124,32 @@ export class UsersController extends BaseController {
     });
   }
 
-  @Post('me/profile-image')
-  updateProfileImage(
+  // ✅ Two-Step Upload: Update profile image with filename
+  @Patch('me/profile-image')
+  async updateProfileImage(
     @Req() req: AuthenticatedRequest,
-    @Body() data: UpdateProfileImageRequestDto,
+    @Body() dto: UpdateProfileImageRequestDto,
   ) {
     const ctx = this.getContext(req);
-    return this.usersService.updateProfileImage(ctx.user.id, data.profileImage);
+
+    // ✅ Validate file exists in storage root (uploaded but not yet moved)
+    const fileExists = await this.storageService.exist(dto.filename);
+    if (!fileExists) {
+      throw new BadRequestException(
+        'File not found. Please upload the file first using /upload endpoint.',
+      );
+    }
+
+    // ✅ Service will move file to proper directory and update DB
+    const result = await this.usersService.updateProfileImage(
+      ctx.user.id,
+      dto.filename,
+    );
+
+    return {
+      success: true,
+      profileImage: result.profileImage,
+    };
   }
 
   @Post('me/change-password')
@@ -131,15 +166,14 @@ export class UsersController extends BaseController {
     return { status: 'success' };
   }
 
-  @ApiParam({ name: 'status', enum: UserStatus })
   @Roles(UserType.Admin)
   @UseGuards(RolesGuard)
-  @Post(':userId/:status')
+  @Patch(':userId/status')
   async setUserStatus(
     @Param('userId', ParseIntPipe) userId: number,
-    @Param('status', new ParseEnumPipe(UserStatus)) status: UserStatus,
+    @Body() dto: UpdateUserStatusDto,
   ) {
-    await this.usersService.setStatus(userId, status);
+    await this.usersService.setStatus(userId, dto.status);
     return { status: 'success' };
   }
 }
