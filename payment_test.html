@@ -1,0 +1,679 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Event Booking System - Test Frontend</title>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .header {
+        text-align: center;
+        color: white;
+        margin-bottom: 30px;
+      }
+
+      .header h1 {
+        font-size: 2.5em;
+        margin-bottom: 10px;
+      }
+
+      .auth-section,
+      .events-section,
+      .booking-section {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        margin-bottom: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #333;
+      }
+
+      .form-group input,
+      .form-group select {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: border-color 0.3s;
+      }
+
+      .form-group input:focus,
+      .form-group select:focus {
+        outline: none;
+        border-color: #667eea;
+      }
+
+      .btn {
+        padding: 12px 30px;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+      }
+
+      .btn-success {
+        background: #10b981;
+        color: white;
+      }
+
+      .btn-danger {
+        background: #ef4444;
+        color: white;
+      }
+
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      .tab {
+        padding: 10px 20px;
+        background: #f3f4f6;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+      }
+
+      .tab.active {
+        background: #667eea;
+        color: white;
+      }
+
+      .events-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+      }
+
+      .event-card {
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        padding: 20px;
+        transition: all 0.3s;
+      }
+
+      .event-card:hover {
+        border-color: #667eea;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .event-card h3 {
+        color: #333;
+        margin-bottom: 10px;
+      }
+
+      .event-card p {
+        color: #666;
+        margin-bottom: 8px;
+        font-size: 14px;
+      }
+
+      .alert {
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+      }
+
+      .alert-success {
+        background: #d1fae5;
+        color: #065f46;
+        border: 1px solid #10b981;
+      }
+
+      .alert-error {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #ef4444;
+      }
+
+      .alert-info {
+        background: #dbeafe;
+        color: #1e40af;
+        border: 1px solid #3b82f6;
+      }
+
+      .user-info {
+        background: #f9fafb;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 20px;
+        color: #666;
+      }
+
+      .booking-details {
+        background: #f9fafb;
+        padding: 20px;
+        border-radius: 8px;
+        margin: 20px 0;
+      }
+
+      .booking-details h4 {
+        margin-bottom: 15px;
+        color: #333;
+      }
+
+      .booking-details .detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid #e0e0e0;
+      }
+
+      .booking-details .detail-row:last-child {
+        border-bottom: none;
+        font-weight: 600;
+        font-size: 1.1em;
+        padding-top: 15px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🎫 Event Booking System</h1>
+        <p>Test your Razorpay Payment Integration</p>
+      </div>
+
+      <!-- Authentication Section -->
+      <div id="authSection" class="auth-section">
+        <div class="tabs">
+          <button class="tab active" onclick="switchTab('login')">Login</button>
+          <button class="tab" onclick="switchTab('register')">Register</button>
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <!-- Login Form -->
+        <form id="loginForm" onsubmit="handleLogin(event)">
+          <div class="form-group">
+            <label>Email</label>
+            <input
+              type="email"
+              id="loginEmail"
+              required
+              placeholder="john@example.com"
+            />
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input
+              type="password"
+              id="loginPassword"
+              required
+              placeholder="Your password"
+            />
+          </div>
+          <button type="submit" class="btn btn-primary">Login</button>
+        </form>
+
+        <!-- Register Form -->
+        <form id="registerForm" class="hidden" onsubmit="handleRegister(event)">
+          <div class="form-group">
+            <label>First Name</label>
+            <input type="text" id="regFirstname" required placeholder="John" />
+          </div>
+          <div class="form-group">
+            <label>Last Name</label>
+            <input type="text" id="regLastname" required placeholder="Doe" />
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input
+              type="email"
+              id="regEmail"
+              required
+              placeholder="john@example.com"
+            />
+          </div>
+          <div class="form-group">
+            <label
+              >Password (min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1
+              special char)</label
+            >
+            <input
+              type="password"
+              id="regPassword"
+              required
+              placeholder="SecurePass@123"
+            />
+          </div>
+          <div class="form-group">
+            <label>Country</label>
+            <input type="text" id="regCountry" required placeholder="India" />
+          </div>
+          <div class="form-group">
+            <label>Role</label>
+            <select id="regRole">
+              <option value="USER">User (Book Events)</option>
+              <option value="ORGANIZER">Organizer (Create Events)</option>
+            </select>
+          </div>
+          <div class="alert alert-info">
+            <strong>Note:</strong> For testing, use any 6-digit code as Email
+            Verification Code (e.g., 123456)
+          </div>
+          <div class="form-group">
+            <label>Email Verification Code</label>
+            <input
+              type="text"
+              id="regEmailCode"
+              required
+              placeholder="123456"
+              value="123456"
+            />
+          </div>
+          <button type="submit" class="btn btn-primary">Register</button>
+        </form>
+      </div>
+
+      <!-- Events Section (Hidden until logged in) -->
+      <div id="eventsSection" class="events-section hidden">
+        <div class="user-info">
+          <strong>Logged in as:</strong> <span id="userEmail"></span>
+          <button
+            onclick="handleLogout()"
+            class="btn btn-danger"
+            style="float: right"
+          >
+            Logout
+          </button>
+        </div>
+
+        <h2>Available Events</h2>
+        <div id="eventsGrid" class="events-grid">
+          <div class="loading">Loading events...</div>
+        </div>
+      </div>
+
+      <!-- Booking Section -->
+      <div id="bookingSection" class="booking-section hidden">
+        <h2>Complete Your Booking</h2>
+        <div id="bookingAlertContainer"></div>
+
+        <div id="bookingDetails" class="booking-details"></div>
+
+        <button
+          id="payBtn"
+          onclick="initiatePayment()"
+          class="btn btn-success"
+          style="width: 100%"
+        >
+          💳 Pay Now with Razorpay
+        </button>
+        <button
+          onclick="cancelBooking()"
+          class="btn btn-danger"
+          style="width: 100%; margin-top: 10px"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+
+    <script>
+      const API_BASE = 'http://localhost:9001';
+      let authToken = localStorage.getItem('authToken');
+      let currentUser = null;
+      let pendingBooking = null;
+
+      // Initialize
+      if (authToken) {
+        loadEvents();
+      }
+
+      function switchTab(tab) {
+        document
+          .querySelectorAll('.tab')
+          .forEach((t) => t.classList.remove('active'));
+        event.target.classList.add('active');
+
+        if (tab === 'login') {
+          document.getElementById('loginForm').classList.remove('hidden');
+          document.getElementById('registerForm').classList.add('hidden');
+        } else {
+          document.getElementById('loginForm').classList.add('hidden');
+          document.getElementById('registerForm').classList.remove('hidden');
+        }
+      }
+
+      function showAlert(
+        message,
+        type = 'info',
+        containerId = 'alertContainer',
+      ) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+        setTimeout(() => (container.innerHTML = ''), 5000);
+      }
+
+      async function handleLogin(e) {
+        e.preventDefault();
+
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+
+        try {
+          const response = await fetch(`${API_BASE}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password }),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.message || 'Login failed');
+          }
+
+          authToken = data.accessToken;
+          currentUser = data.user;
+          localStorage.setItem('authToken', authToken);
+
+          showAlert('Login successful! Loading events...', 'success');
+
+          setTimeout(() => {
+            document.getElementById('authSection').classList.add('hidden');
+            loadEvents();
+          }, 1000);
+        } catch (error) {
+          showAlert(error.message, 'error');
+        }
+      }
+
+      async function handleRegister(e) {
+        e.preventDefault();
+
+        const userData = {
+          firstname: document.getElementById('regFirstname').value,
+          lastname: document.getElementById('regLastname').value,
+          email: document.getElementById('regEmail').value,
+          password: document.getElementById('regPassword').value,
+          country: document.getElementById('regCountry').value,
+          emailVerificationCode: document.getElementById('regEmailCode').value,
+          role: document.getElementById('regRole').value,
+        };
+
+        try {
+          const response = await fetch(`${API_BASE}/auth/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(userData),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.message || 'Registration failed');
+          }
+
+          showAlert('Registration successful! Please login.', 'success');
+          switchTab('login');
+        } catch (error) {
+          showAlert(error.message, 'error');
+        }
+      }
+
+      async function loadEvents() {
+        const eventsSection = document.getElementById('eventsSection');
+        const eventsGrid = document.getElementById('eventsGrid');
+
+        eventsSection.classList.remove('hidden');
+        document.getElementById('userEmail').textContent =
+          currentUser?.email || 'User';
+
+        try {
+          const response = await fetch(`${API_BASE}/events`, {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error('Failed to load events');
+          }
+
+          if (data.data && data.data.length > 0) {
+            eventsGrid.innerHTML = data.data
+              .map(
+                (event) => `
+                        <div class="event-card">
+                            <h3>${event.title}</h3>
+                            <p><strong>📅 Date:</strong> ${new Date(event.eventDate).toLocaleDateString()}</p>
+                            <p><strong>📍 Venue:</strong> ${event.venue || 'TBA'}</p>
+                            <p><strong>💰 Price:</strong> ₹${event.basePrice}</p>
+                            <p><strong>🎫 Available:</strong> ${event.availableSeats} / ${event.totalSeats} seats</p>
+                            <button onclick="bookEvent(${event.id}, '${event.title}', ${event.basePrice})" 
+                                    class="btn btn-primary" 
+                                    style="width: 100%; margin-top: 10px;"
+                                    ${event.availableSeats === 0 ? 'disabled' : ''}>
+                                ${event.availableSeats > 0 ? 'Book Now' : 'Sold Out'}
+                            </button>
+                        </div>
+                    `,
+              )
+              .join('');
+          } else {
+            eventsGrid.innerHTML =
+              '<p style="text-align: center; color: #666;">No events available</p>';
+          }
+        } catch (error) {
+          eventsGrid.innerHTML = `<p style="color: red;">${error.message}</p>`;
+        }
+      }
+
+      async function bookEvent(eventId, eventTitle, basePrice) {
+        const seatCount = prompt('How many seats do you want to book?', '1');
+
+        if (!seatCount || seatCount < 1) {
+          return;
+        }
+
+        try {
+          const response = await fetch(`${API_BASE}/bookings`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${authToken}`,
+            },
+            body: JSON.stringify({
+              eventId: parseInt(eventId),
+              seatCount: parseInt(seatCount),
+            }),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.message || 'Booking failed');
+          }
+
+          pendingBooking = data;
+
+          // Show booking details
+          document.getElementById('eventsSection').classList.add('hidden');
+          document.getElementById('bookingSection').classList.remove('hidden');
+
+          document.getElementById('bookingDetails').innerHTML = `
+                    <h4>Booking Summary</h4>
+                    <div class="detail-row">
+                        <span>Event:</span>
+                        <span>${eventTitle}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span>Seats:</span>
+                        <span>${data.booking.seatCount}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span>Base Amount:</span>
+                        <span>₹${data.booking.baseAmount}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span>Platform Fee (incl. GST):</span>
+                        <span>₹${data.booking.platformFee}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span>Total Amount:</span>
+                        <span>₹${data.booking.totalAmount}</span>
+                    </div>
+                    <p style="margin-top: 15px; color: #666; font-size: 14px;">
+                        <strong>Booking Reference:</strong> ${data.booking.bookingReference}
+                    </p>
+                `;
+        } catch (error) {
+          alert(error.message);
+        }
+      }
+
+      function initiatePayment() {
+        if (!pendingBooking) {
+          alert('No booking found');
+          return;
+        }
+
+        const options = {
+          key: 'rzp_test_RobOm0OWIEcoFV', // Your test key
+          amount: pendingBooking.payment.amount,
+          currency: pendingBooking.payment.currency,
+          order_id: pendingBooking.payment.orderId,
+          name: 'Event Booking System',
+          description: `Booking: ${pendingBooking.booking.bookingReference}`,
+          handler: function (response) {
+            verifyPayment(response);
+          },
+          prefill: {
+            email: currentUser?.email || '',
+            contact: currentUser?.mobile || '',
+          },
+          theme: {
+            color: '#667eea',
+          },
+          modal: {
+            ondismiss: function () {
+              showAlert('Payment cancelled', 'error', 'bookingAlertContainer');
+            },
+          },
+        };
+
+        const rzp = new Razorpay(options);
+        rzp.open();
+      }
+
+      async function verifyPayment(razorpayResponse) {
+        try {
+          const response = await fetch(`${API_BASE}/bookings/verify-payment`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${authToken}`,
+            },
+            body: JSON.stringify({
+              bookingReference: pendingBooking.booking.bookingReference,
+              razorpay_order_id: razorpayResponse.razorpay_order_id,
+              razorpay_payment_id: razorpayResponse.razorpay_payment_id,
+              razorpay_signature: razorpayResponse.razorpay_signature,
+            }),
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            showAlert(
+              '🎉 Payment successful! Booking confirmed.',
+              'success',
+              'bookingAlertContainer',
+            );
+            document.getElementById('payBtn').disabled = true;
+            document.getElementById('payBtn').textContent =
+              '✅ Payment Completed';
+
+            setTimeout(() => {
+              cancelBooking();
+              loadEvents();
+            }, 3000);
+          } else {
+            throw new Error(data.message || 'Payment verification failed');
+          }
+        } catch (error) {
+          showAlert(error.message, 'error', 'bookingAlertContainer');
+        }
+      }
+
+      function cancelBooking() {
+        pendingBooking = null;
+        document.getElementById('bookingSection').classList.add('hidden');
+        document.getElementById('eventsSection').classList.remove('hidden');
+      }
+
+      function handleLogout() {
+        localStorage.removeItem('authToken');
+        authToken = null;
+        currentUser = null;
+
+        document.getElementById('eventsSection').classList.add('hidden');
+        document.getElementById('authSection').classList.remove('hidden');
+
+        showAlert('Logged out successfully', 'info');
+      }
+    </script>
+  </body>
+</html>

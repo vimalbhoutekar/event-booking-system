@@ -12,6 +12,13 @@ import { AuthModule } from './auth';
 import { RedisModule } from './redis';
 import { EventsModule } from './events/events.module';
 import { BookingsModule } from './bookings/bookings.module';
+import { PaymentsModule } from './payments/payments.module';
+import { CancellationsService } from './cancellations/cancellations.service';
+import { CancellationsModule } from './cancellations/cancellations.module';
+import { TicketsModule } from './tickets/tickets.module';
+import { SchedulerService } from './scheduler/scheduler.service';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -21,6 +28,12 @@ import { BookingsModule } from './bookings/bookings.module';
       }),
       inject: [StorageService],
     }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000, // 1 minute
+        limit: 100, // 100 requests per minute per IP
+      },
+    ]),
     CacheModule.register({ isGlobal: true }),
     EventEmitterModule.forRoot(),
     ScheduleModule.forRoot(),
@@ -28,8 +41,12 @@ import { BookingsModule } from './bookings/bookings.module';
     PrismaModule,
     RedisModule,
     AuthModule,
+    PaymentsModule,
     EventsModule,
     BookingsModule,
+    CancellationsModule,
+    TicketsModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [
@@ -37,6 +54,8 @@ import { BookingsModule } from './bookings/bookings.module';
       provide: APP_INTERCEPTOR,
       useClass: AppCacheInterceptor,
     },
+    CancellationsService,
+    SchedulerService,
   ],
 })
 export class AppModule {}

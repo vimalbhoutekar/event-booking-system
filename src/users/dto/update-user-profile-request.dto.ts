@@ -1,8 +1,8 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsStrongPassword } from 'class-validator';
-import { UpdateProfileDetailsRequestDto } from './update-profile-request.dto';
+import { UpdateUserProfileBaseRequestDto } from './update-user-profile-base-request.dto';
 
-export class UpdateUserProfileRequestDto extends UpdateProfileDetailsRequestDto {
+export class UpdateUserProfileRequestDto extends UpdateUserProfileBaseRequestDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsStrongPassword()

@@ -89,7 +89,7 @@ export class SettingsService {
       }
 
       if (
-        setting.type === SettingType.SingleSelect &&
+        setting.type === SettingType.SINGLE_SELECT &&
         setting.isDefinedOptions
       ) {
         const option = _.find(
@@ -100,7 +100,7 @@ export class SettingsService {
       }
 
       if (
-        setting.type === SettingType.MultiSelect &&
+        setting.type === SettingType.MULTI_SELECT &&
         setting.isDefinedOptions
       ) {
         return {
@@ -148,7 +148,7 @@ export class SettingsService {
   }
 
   async getUserSettings(userId: number, mappedTo?: string) {
-    const allSettings = await this.getAll(SettingContext.User, {
+    const allSettings = await this.getAll(SettingContext.USER, {
       mappedTo,
     });
     const userSettings = await this.prisma.userSetting.findMany({
@@ -163,7 +163,7 @@ export class SettingsService {
   }
 
   async getSystemSettings(mappedTo?: string) {
-    const allSettings = await this.getAll(SettingContext.System, {
+    const allSettings = await this.getAll(SettingContext.SYSTEM, {
       mappedTo,
     });
     const systemSettings = await this.prisma.systemSetting.findMany({
@@ -185,7 +185,7 @@ export class SettingsService {
   }): Promise<UserSetting> {
     const setting = await this.getById(data.settingId);
     if (
-      setting.type === SettingType.Binary &&
+      setting.type === SettingType.BINARY &&
       typeof data.enable === 'boolean'
     ) {
       return await this.upsertUserSetting(
@@ -196,7 +196,7 @@ export class SettingsService {
     }
 
     if (
-      setting.type === SettingType.SingleSelect &&
+      setting.type === SettingType.SINGLE_SELECT &&
       typeof data.selection === 'string'
     ) {
       if (setting.isDefinedOptions) {
@@ -217,7 +217,7 @@ export class SettingsService {
     }
 
     if (
-      setting.type === SettingType.MultiSelect &&
+      setting.type === SettingType.MULTI_SELECT &&
       data.selections instanceof Array
     ) {
       if (setting.isDefinedOptions) {
@@ -250,14 +250,14 @@ export class SettingsService {
   }): Promise<SystemSetting> {
     const setting = await this.getById(data.settingId);
     if (
-      setting.type === SettingType.Binary &&
+      setting.type === SettingType.BINARY &&
       typeof data.enable === 'boolean'
     ) {
       return await this.upsertSystemSetting(data.settingId, data.enable);
     }
 
     if (
-      setting.type === SettingType.SingleSelect &&
+      setting.type === SettingType.SINGLE_SELECT &&
       typeof data.selection === 'string'
     ) {
       if (setting.isDefinedOptions) {
@@ -277,7 +277,7 @@ export class SettingsService {
     }
 
     if (
-      setting.type === SettingType.MultiSelect &&
+      setting.type === SettingType.MULTI_SELECT &&
       data.selections instanceof Array
     ) {
       if (setting.isDefinedOptions) {

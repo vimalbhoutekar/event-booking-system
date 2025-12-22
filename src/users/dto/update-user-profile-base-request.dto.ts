@@ -9,7 +9,7 @@ import {
   IsString,
 } from 'class-validator';
 
-export class UpdateProfileDetailsRequestDto {
+export class UpdateUserProfileBaseRequestDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()

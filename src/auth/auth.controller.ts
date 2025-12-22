@@ -119,14 +119,14 @@ export class AuthController extends BaseController {
     if (data.email) {
       response.email = await this.authService.sendCode(
         data.email,
-        OtpTransport.Email,
+        OtpTransport.EMAIL,
         data.type,
       );
     }
     if (data.mobile) {
       response.mobile = await this.authService.sendCode(
         data.mobile,
-        OtpTransport.Mobile,
+        OtpTransport.MOBILE,
         data.type,
       );
     }
@@ -149,6 +149,7 @@ export class AuthController extends BaseController {
       country: data.country,
       emailVerificationCode: data.emailVerificationCode,
       mobileVerificationCode: data.mobileVerificationCode,
+      role: data.role,
     });
 
     if (
